@@ -38,6 +38,9 @@ def nz_fromsim_config(pipeline_variables_path):
     catalogue_dir = str(config['measurement_setup']['CATALOGUE_DIR'])
     realisations = int(float(config['measurement_setup']['REALISATIONS']))
 
+    sigma_phot = str(config['noise_cls']['SIGMA_PHOT'])
+    sigma_shear = str(config['noise_cls']['SIGMA_SHEAR'])
+
     # Prepare config dictionary
     config_dict = {
         'zmin': zmin,
@@ -161,6 +164,8 @@ def create_nz_fromsim(config_dict, z_boundaries, redshift_type):
     catalogue_dir = config_dict['catalogue_dir']
     realisations = config_dict['realisations']
     nz_table_filename = config_dict['nz_table_filename']
+    sigma_phot = config_dict['sigma_phot']
+    sigma_shear = config_dict['sigma_shear']
 
     z_boundaries_low = z_boundaries[0]
     z_boundaries_mid = z_boundaries[1]
@@ -219,17 +224,19 @@ def create_nz_fromsim(config_dict, z_boundaries, redshift_type):
 
     final_cat_tab = np.vstack((final_cat_tab, zmax_pad))
     final_cat_tab = np.transpose(final_cat_tab)
-
-    if zmin != 0:
-        final_cat_tab = np.transpose(final_cat_tab)
-        pad_vals = int((zmin-0)/dz)
-        for i in range(pad_vals):
-            z_pad = np.array([zmin-((i+1)*dz)])
-            pad_arr = np.concatenate((z_pad, np.zeros(nbins)))
-            final_cat_tab = np.vstack((pad_arr, final_cat_tab))
-
-        final_cat_tab = np.transpose(final_cat_tab)
     '''
+
+    if sigma_phot == 0:
+        if zmin != 0:
+            final_cat_tab = np.transpose(final_cat_tab)
+            pad_vals = int((zmin-0)/dz)
+            for i in range(pad_vals):
+                z_pad = np.array([zmin-((i+1)*dz)])
+                pad_arr = np.concatenate((z_pad, np.zeros(nbins)))
+                final_cat_tab = np.vstack((pad_arr, final_cat_tab))
+
+            final_cat_tab = np.transpose(final_cat_tab)
+
     return final_cat_tab
 
 
