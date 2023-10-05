@@ -1,6 +1,6 @@
 """
-Script to generate a random sample of N galaxies that follows a given p(z) distribution. Parameters are read in from the
-'set_variables_cat.ini' variables file, and the sample of galaxies is saved as 'Raw_Galaxy_Sample.hdf5' on disk.
+Script to generate a random sample of N galaxies that follows a given p(z) distribution. Parameters are read in from
+the 'set_variables_cat.ini' file, and the sample of galaxies is saved as 'Raw_Galaxy_Sample.hdf5' on disk.
 """
 
 import os
@@ -17,7 +17,8 @@ def pz_config(pipeline_variables_path):
 
     Parameters
     ----------
-    pipeline_variables_path (str): Path to the 'set_variables_cat.ini' parameters file that exists within pipeline folder
+    pipeline_variables_path (str):  Path to the 'set_variables_cat.ini' parameters file that exists within pipeline
+                                    folder
 
     Returns
     -------
@@ -57,7 +58,6 @@ def pz_config(pipeline_variables_path):
     return config_dict
 
 
-# Functional form of n(z) probability distribution with which to randomly sample galaxies
 def pz(z, z0, beta):
 
     """
@@ -65,8 +65,9 @@ def pz(z, z0, beta):
 
     Parameters
     ----------
-    z (array):  Redshift values with which to return a probability distribution
-    z0 (float): The z0 functional constant
+    z (array):      Redshift values with which to return a probability distribution
+    z0 (float):     Functional constant to normalise the redshift
+    beta (float):   Exponential constant for redshift distribution
 
     Returns
     -------
@@ -79,15 +80,12 @@ def pz(z, z0, beta):
 def init_nz(config_dict):
 
     """
-    Generate a random sample of N galaxies that follows the probability distribution pz
+    Generate a random sample of N galaxies that follows the probability distribution pz and save to disk
 
     Parameters
     ----------
     config_dict (dict): Dictionary of config parameters set up in pz_config
 
-    Returns
-    -------
-    Array of the probability values at the given redshifts
     """
 
     zmin = config_dict['zmin']
@@ -121,10 +119,10 @@ def init_nz(config_dict):
 
 
 def main():
-    
+
     """
-    Generate the galaxy sample by reading in the pipeline variables file as environment variable, then setting
-    up the config dictionary and initialising the n(z)
+    Generate the galaxy sample by reading in the pipeline variables file as environment variable, then setting up the
+    config dictionary and initialising the n(z)
     """
 
     pipeline_variables_path = os.environ['PIPELINE_VARIABLES_PATH']

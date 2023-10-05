@@ -40,7 +40,6 @@ echo Converting Cosmosis output to Flask input format...
 python conv_fields_cosmosis_flask.py
 echo Done
 
-
 export REALISATIONS
 
 for ITER_NO in $(seq 1 $REALISATIONS)
@@ -50,7 +49,7 @@ do
   mkdir -p ${SAVE_DIR}flask/output/iter_${ITER_NO}/
   echo Running Flask to simulate real-sky field maps - Realisation ${ITER_NO} / ${REALISATIONS}
   python run_flask.py &> ${SAVE_DIR}flask/output/iter_${ITER_NO}/flask_out.txt
-  echo Done
+  echo Flask simulation complete
 
   echo Interpolating Clustering, Convergence and Shear Maps - Realisation ${ITER_NO} / ${REALISATIONS}
   python interp_maps.py
@@ -64,8 +63,8 @@ do
   python compile_cat.py
   echo Done
 
-  echo CLEANING - Realisation ${ITER_NO} / ${REALISATIONS}
-  python clean_products.py
+  echo CLEANING
+  python clean_products.py - Realisation ${ITER_NO} / ${REALISATIONS}
   echo Done
 
 done

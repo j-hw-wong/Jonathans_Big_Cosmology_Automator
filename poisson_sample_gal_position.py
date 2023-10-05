@@ -1,3 +1,10 @@
+"""
+Script to Poisson-sample the matter density field traced by the p(z) redshift distribution at each map slice in
+redshift space. Generates a number count of galaxies per Healpix pixel, which is saved as a simple table
+'cat_indices.hdf5' on disk to then load and assign shear values to in the following 'compile_cat.py' script.
+Repeated over a given number of realisations/iterations.
+"""
+
 import os
 import h5py
 import configparser
@@ -7,11 +14,27 @@ import matplotlib.pyplot as plt
 
 
 def poisson_sample_masked_map(expected_numb_dens_map, mask, n_pixels):
+
+    """
+    Function to poisson sample a given matter field map by returning an integer number count of galaxies per pixel
+
+    Parameters
+    ----------
+    expected_numb_dens_map (arr):   Array of the 'expected' number density of galaxies converted from the raw density
+                                    field
+    mask (arr): Healpix map of the given mask used for observation
+    n_pixels (float):   Number of pixels in the given map
+
+    Returns
+    -------
+    A Healpix map contaning the per pixel integer number density of galaxies. Pixels that fall outside of the mask are
+    given the hp.UNSEEN value.
+    """
+
     obs_inds = np.where(mask == 1)[0]
     mask_inds = np.where(mask == 0)[0]
 
     expected_numb_dens_obs = expected_numb_dens_map[obs_inds]
-    #expected_numb_dens_obs = expected_numb_dens_obs.astype(np.float64)
     rng = np.random.default_rng()
     numb_dens_obs = rng.poisson(lam=expected_numb_dens_obs)
 
@@ -23,6 +46,13 @@ def poisson_sample_masked_map(expected_numb_dens_map, mask, n_pixels):
 
 
 def execute_poisson_sampling():
+
+    """
+    Execute the Poisson sampling routine - load in pipeline parameters from variables file, then apply observation
+    mask and Poisson sample the observed pixels. This process essentially assigns each galaxy in the sample a given
+    Healpix pixel ID - the location on the sky where it is observed. This table is then saved to disk under the
+    'cat_products/cat_indices/' location.
+    """
 
     pipeline_variables_path = os.environ['PIPELINE_VARIABLES_PATH']
 
@@ -86,7 +116,10 @@ def execute_poisson_sampling():
         raw_field_vals = np.array(f.get('Clustering'))
         f.close()
 
+        # For if you want to Poisson sample a homogeneous map - useful for e.g.
+        # debugging, testing/comparing noise levels etc.
         # raw_field_vals = np.zeros(npix)
+
         norm_field_vals = raw_field_vals
 
         corrected_pixels = sum(pix < -1 for pix in raw_field_vals[np.where(mask_map == 1)])

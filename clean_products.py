@@ -1,3 +1,9 @@
+"""
+Script to delete catalogue simulation by-products that have been saved on disk. Important for considerations of disk
+space, especially for large numbers of galaxies and high redshfit ranges. Deletes the interpolated field maps and
+the catalogue indices by product following Poisson sampling. Repeated over a given number of realisations/iterations.
+"""
+
 import os
 import shutil
 import configparser

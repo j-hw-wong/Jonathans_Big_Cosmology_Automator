@@ -1,23 +1,30 @@
+"""
+Create a tomographic n(z) based on measurement parameters supplied by 'set_variables_3x2pt_measurement.ini'. First, an
+array of redshift boundary values for each bin is created and saved to disk, then the n(z) is measured using these
+boundaries from the simulated catalogues.
+"""
+
 import os
-import configparser
 import sys
 import h5py
+import configparser
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
-from matplotlib.colors import LogNorm
 
 
 def nz_fromsim_config(pipeline_variables_path):
+
     """
+    Set up a config dictionary to generate an n(z) distribution as measured from the simulations
 
     Parameters
     ----------
-    pipeline_variables_path (str):  Path to location of set_variables.ini file
+    pipeline_variables_path (str):  Path to location of pipeline variables file ('set_variables_3x2pt_measurement.ini')
 
     Returns
     -------
-    Dictionary of nz parameters
+    Dictionary of n(z) parameters
     """
 
     config = configparser.ConfigParser()
@@ -51,14 +58,31 @@ def nz_fromsim_config(pipeline_variables_path):
         'nz_table_filename': nz_table_filename,
         'save_dir': save_dir,
         'catalogue_dir': catalogue_dir,
-        'realisations': realisations
-
+        'realisations': realisations,
+        'sigma_phot': sigma_phot,
+        'sigma_shear': sigma_shear
     }
 
     return config_dict
 
 
 def create_zbin_boundaries(config_dict):
+
+    """
+    Create a table of the redshift boundaries used for binning the galaxies in the simulated catalogues for the 3x2pt
+    analysis, which is then saved to disk.
+
+    Parameters
+    ----------
+
+    config_dict (dict): Dictionary of pipeline and redshift distribution parameters used to generate the bin boundaries
+                        and overall n(z)
+
+    Returns
+    -------
+    Array of the redshift bin boundaries evaluated for the given number of bins + binning configuration.
+    """
+
     zmin = config_dict['zmin']
     zmax = config_dict['zmax']
     dz = config_dict['dz']
@@ -155,6 +179,26 @@ def create_zbin_boundaries(config_dict):
 
 
 def create_nz_fromsim(config_dict, z_boundaries, redshift_type):
+
+    """
+    Create the tomographic n(z) from the measurement parameters stored in the config dictionary, and the redshift
+    boundary columns for the given tomographic configuration.
+
+    Parameters
+    ----------
+    config_dict (dict): Dictionary of the measurement parameters read-in from the 'set_variables_3x2pt_measurement.ini'
+                        file
+    z_boundaries (arr): Array of the redshift boundaries corresponding to each bin - generated from
+                        'create_zbin_boundaries' function
+    redshift_type (str):    Redshift type to bin into the n(z) - either the 'Observed' redshifts (i.e. photo-z) or the
+                            'True' redshifts (i.e. spec-z)
+
+    Returns
+    -------
+    Array describing the tomographic n(z) - one column of the redshift, followed by columns of the number density
+    per bin.
+    """
+
     zmin = config_dict['zmin']
     zmax = config_dict['zmax']
     dz = config_dict['dz']
@@ -241,6 +285,12 @@ def create_nz_fromsim(config_dict, z_boundaries, redshift_type):
 
 
 def main():
+
+    """
+    Generate the n(z) measured from the simulated catalogues. First set up the config dictionary, then create the
+    bin boundaries array for the chosen tomogaphy, then save n(z) to disk and plot.
+    """
+
     pipeline_variables_path = os.environ['PIPELINE_VARIABLES_PATH']
     # Create 'Observed Redshift'
     config_dict = nz_fromsim_config(pipeline_variables_path=pipeline_variables_path)

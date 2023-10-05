@@ -1,6 +1,6 @@
 """
-Convert the 3x2pt data calculated from CosmoSIS into the correct file + field conventions required for the map generation
-by Flask
+Convert the 3x2pt data calculated from CosmoSIS into the correct file + field conventions required for the map
+generation by Flask
 """
 
 import os
@@ -12,7 +12,7 @@ def conversion_config(pipeline_variables_path):
 
     """
     Set up a config dictionary to execute the CosmoSIS-Flask file conversion based on pipeline parameters
-    specified in a given input variables file 
+    specified in a given input variables file
 
     Parameters
     ----------
@@ -109,7 +109,6 @@ def execute(config_dict):
     Parameters
     ----------
     config_dict (dict): Dictionary of pipeline and field parameters for the 3x2pt simulation
-
     """
 
     save_dir = config_dict['save_dir']
@@ -231,8 +230,8 @@ def execute(config_dict):
 def main():
 
     """
-    Generate and save the Flask 3x2pt field data files by reading in the pipeline variables file as environment variable, 
-    then setting up the config dictionary and converting the CosmoSIS field information saved on disk
+    Generate and save the Flask 3x2pt field data files by reading in the pipeline variables file as environment
+    variable, then setting up the config dictionary and converting the CosmoSIS field information saved on disk
     """
 
     pipeline_variables_path = os.environ['PIPELINE_VARIABLES_PATH']
@@ -242,5 +241,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

@@ -1,3 +1,15 @@
+"""
+Script to compile the final cosmic shear catalogue. From the table of galaxy redshifts + position index generated in
+'cat_indices.hdf5' by poisson_sample_gal_position.py, we find the shear field maps at the given redshift slice, and
+assign the k, y1, y2 shear values of the pixel that each galaxy is found in. When compiling the final catalogue table,
+we then introduce Gaussian and catastrophic photo-z errors into the Redshift values, adding an extra column for each
+phenomenon. The 'True_Redshift' is the underlying p(z)' the 'Gaussian_Redshift' is the observed redshift with Gaussian
+photo-z errors only, and the 'Redshift_z' is the final observed redshift including catastrophic photo-z injection.
+The final catalogue is saved as 'master_cat_poisson_sampled.hdf5' on disk - repeated over a given number of
+realisations/iterations.
+"""
+
+
 import os
 import h5py
 import configparser
@@ -6,6 +18,18 @@ from random import choices
 
 
 def compile_cat_config(pipeline_variables_path):
+
+    """
+    Set up a config dictionary of pipeline parameters and input quantites describing the photo-z error distributions
+
+    Parameters
+    ----------
+    pipeline_variables_path (str):  Path to pipeline variables .ini file
+
+    Returns
+    -------
+    Dictionary of pipeline parameters
+    """
 
     config = configparser.ConfigParser()
     config.read(pipeline_variables_path)
@@ -57,16 +81,54 @@ def compile_cat_config(pipeline_variables_path):
 
 
 def generate_cat_err_sig(redshifts, lambda_1, lambda_2, sig):
+
+    """
+    Function to inject catastrophic photo-z errors into the redshift sample based on a confusion of two given
+    wavelength lines and error distribution
+
+    Parameters
+    ----------
+    redshifts (arr):    Array of galaxy redshifts to inject catastrophic photo-zs into
+    lambda_1 (float):   Wavelength of first given spectral line
+    lambda_2 (float):   Wavelength of second given spectral line
+    sig (float):        Sigma spread describing the error distribution around where the pair confusion line is found
+
+    Returns
+    -------
+    Array of galaxy redshifts with catastrophic photo-z errors
+    """
+
     cat_z_mus = ((1+redshifts)*(lambda_1/lambda_2))-1
     return np.random.normal(cat_z_mus, sig*np.ones(len(cat_z_mus)), size=len(cat_z_mus))
 
 
 def split_z_chunks(a, n):
+
+    """
+    Convenience function to split a chunk of galaxy redshifts into equal sub-chunks (used to distribute all pairs of
+    photo-z confusion between)
+
+    Parameters
+    ----------
+    a (arr):    Array of redshift values
+    n (int):    Number of chunks to split data into
+
+    Returns
+    -------
+    Array of n sub-samples that the original data array a has been split into
+    """
+
     k, m = divmod(len(a), n)
     return [a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n)]
 
 
 def execute_cat_compilation():
+
+    """
+    Execute the compilation of the final master catalogue. First load in galaxy pixel indices, assign the shear k, y1,
+    y2 values based on the shear field maps at the same redshift slice, then inject both Gaussian and catastrophic
+    photo-z errors.
+    """
 
     pipeline_variables_path = os.environ['PIPELINE_VARIABLES_PATH']
     compile_cat_config_dict = compile_cat_config(pipeline_variables_path=pipeline_variables_path)

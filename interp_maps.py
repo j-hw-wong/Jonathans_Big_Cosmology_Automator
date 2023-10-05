@@ -1,7 +1,7 @@
 """
-Script to generate additional 3x2pt field maps by linear interpolation if there are redshift sample points that fall 
-between where Flask generates maps for (i.e. the no. z bins used to generate maps with Flask is less than the total 
-number of redshift sample points)
+Script to generate additional 3x2pt field maps by linear interpolation if there are redshift sample points that fall
+between where Flask generates maps for (i.e. the no. z bins used to generate maps with Flask is less than the total
+number of redshift sample points). Repeated over a given number of realisations/iterations.
 This was extremely painful to code so...you're welcome lol.
 """
 
@@ -92,8 +92,8 @@ def load_map_slices(config, slice_i, slice_j, field_type):
     config (dict):  Dictionary of the pipeline parameters used for the catalogue simulation
     slice_i (int):  Redshift-space ID of the first map to load in for pair-wise pixel interpolation
     slice_j (int):  Redshift-space ID of the second map to load in for pair-wise pixel interpolation
-    field_type (str):   The given 3x2pt field to interpolate field values for. Must be one of 'Clustering', 'Convergence',
-                        'Shear_y1', or 'Shear_y2'
+    field_type (str):   The given 3x2pt field to interpolate field values for. Must be one of 'Clustering',
+                        'Convergence', 'Shear_y1', or 'Shear_y2'
 
     Returns
     -------
@@ -141,6 +141,22 @@ def load_map_slices(config, slice_i, slice_j, field_type):
 
 
 def save_interp_map(config, ras, decs, map_name, map_arr, z_at_slice, field_type):
+
+    """
+    Save the interpolated field map (Healpix array) of a given type at a given redshift to disk
+
+    Parameters
+    ----------
+    config (dict):  Config dictionary of pipeline parameters
+    ras (arr):      Array of RA values corresponding to each Healpix pixel (index ordered from 0 -> Npix)
+    decs (arr):     Array of Dec values corresponding to each Healpix pixel (index ordered from 0 -> Npix)
+    map_name (str): Name with which to save interpolated map to disk
+    map_arr (str):  The Healpix map array containing the interpolated field values
+    z_at_slice (float): Redshift at which the interpolated field map is evaluated
+    field_type (str):   Field type of given interpolated map - will dictate which folder on disk to save map into. Must
+                        be one of 'Clustering', 'Convergence', or 'Shear'. If type is 'Shear', assumes that the map_arr
+                        array is of the form [map_arr_1, map_arr_2], corresponding to the two shear components y1, y2
+    """
 
     interp_cluster_path = config['interp_cluster_path']
     interp_conv_path = config['interp_conv_path']
@@ -237,6 +253,26 @@ def save_interp_map(config, ras, decs, map_name, map_arr, z_at_slice, field_type
 
 def setup_interpolation(config, field, pair_type, pair_id=0):
 
+    """
+    Set up the interpolation functions depending on where the maps are located in redshift-space. If the pair of maps
+    to interpolate between are at the wings of the redshift distribution we perform a linear extrapolation to fill in
+    additional redshift sample points. If the pair of maps are anywhere in the 'middle' of the redshift distribution
+    (i.e.) not the pairs on either end, then set up a linear interpolation.
+
+    Parameters
+    ----------
+    config (dict):  Config dict on pipeline parameters
+    field (str):    Given field type - used to find directory to load Flask compiled maps and set up interpolation
+                    functions
+    pair_type (str):    'First', 'Middle', or 'Last' - pair type of Flask maps to set up either interpolation or
+                        extrapolation
+    pair_id (float):    The 'ID' corresponding to where the maps are in redshift-space
+
+    Returns
+    -------
+
+    """
+
     zs = config['zs']
     zmin = config['zmin']
     zmax = config['zmax']
@@ -279,6 +315,20 @@ def setup_interpolation(config, field, pair_type, pair_id=0):
 
 
 def execute_interpolation(config, ras, decs, field):
+
+    """
+    Execute the map interpolation. First determine what field to load, then iterate through pairs of Flask maps in
+    the redshift sample to generate interpolated field maps and then save to disk.
+
+    Parameters
+    ----------
+    config (dict):  Dictionary of pipeline config parameters
+    ras (arr):      Array of RA values corresponding to each Healpix pixel (following Healpix indexing from 0 ->
+                    Npix)
+    decs (arr):     Array of Dec values corresponding to each Healpix pixel (following Healpix indexing from 0 ->
+                    Npix)
+    field (str):    Given field type - used to find and load Flask-generated maps
+    """
 
     z_sample = config['z_sample']
     nbins = config['nbins']
@@ -376,6 +426,11 @@ def execute_interpolation(config, ras, decs, field):
 
 
 def main():
+
+    """
+    Main function to run the interpolation routine. Load in the pipeline variables to prep into a config dictionary,
+    then execute the interpolation for each field type.
+    """
 
     pipeline_variables_path = os.environ['PIPELINE_VARIABLES_PATH']
     interp_config_dict = interp_config(pipeline_variables_path=pipeline_variables_path)

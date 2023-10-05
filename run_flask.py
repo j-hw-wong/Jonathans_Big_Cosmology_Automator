@@ -1,6 +1,7 @@
-'''
-Run the Flask software using the pyFlask wrapper to generate the correlated 3x2pt field maps from the 3x2pt power spectra
-'''
+"""
+Run the Flask software using the pyFlask wrapper to generate the correlated 3x2pt field maps from the 3x2pt power
+spectra. Repeated over a given number of realisations/iterations.
+"""
 
 import os
 import random
@@ -12,8 +13,8 @@ import numpy as np
 def flask_config(pipeline_variables_path):
 
     """
-    Set up a config dictionary to run based on catalogue simulation pipeline parameters specified in a given 
-    input variables file 
+    Set up a config dictionary to run based on catalogue simulation pipeline parameters specified in a given
+    input variables file
 
     Parameters
     ----------
@@ -53,8 +54,8 @@ def flask_config(pipeline_variables_path):
 def main():
 
     """
-    Run pyFlask for a given random seed and simulation parameters. A dummy flask.config file is read in from the pipeline
-    directory and overwritten with the parameters from the dictionary set up in flask_config
+    Run pyFlask for a given random seed and simulation parameters. A dummy flask.config file is read in from the
+    pipeline directory and overwritten with the parameters from the dictionary set up in flask_config
     """
 
     rnd_seed = random.randint(100,999)
@@ -74,7 +75,7 @@ def main():
     if not os.path.exists(flask_output_dir):
         os.makedirs(flask_output_dir)
 
-    np.savetxt(flask_output_dir+'rnd_seed.txt',np.array([rnd_seed]))
+    np.savetxt(flask_output_dir+'rnd_seed.txt', np.array([rnd_seed]))
 
     pyFlask.flask([
         "flask", pipeline_dir + "flask_3x2pt.config",
