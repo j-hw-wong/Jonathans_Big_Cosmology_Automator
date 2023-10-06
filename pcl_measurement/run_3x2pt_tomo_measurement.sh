@@ -2,10 +2,8 @@
 
 start=$SECONDS
 
-PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/3x2pt_pipeline_final/set_variables_3x2pt_measurement.ini"
+PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/Jonathans_Big_Cosmology_Automator/pcl_measurement/set_variables_3x2pt_measurement.ini"
 export PIPELINE_VARIABLES_PATH
-export ANGULAR_BINNING_PATH
-export GAUSSIAN_CL_LIKELIHOOD_PATH
 
 echo Creating nz...
 python create_nz_fromsim.py
@@ -31,8 +29,10 @@ export NZ_TABLE_FILENAME
 export ELL_MIN
 export ELL_MAX
 
+cd ${PIPELINE_DIR}/software_utils/
 bash run_cosmosis.sh  &> ${SAVE_DIR}run_cosmosis_log.txt
 echo Done
+cd ${PIPELINE_DIR}/pcl_measurement/
 
 for ITER_NO in $(seq 1 $REALISATIONS)
 do
@@ -46,6 +46,9 @@ done
 echo Calculating Cls averaged over realisations...
 python av_cls.py
 echo Done
+
+GAUSSIAN_CL_LIKELIHOOD_PATH=${PIPELINE_DIR}gaussian_cl_likelihood/
+export GAUSSIAN_CL_LIKELIHOOD_PATH
 
 echo Measuring Bandpowers from average Cls...
 python measure_cat_bps.py

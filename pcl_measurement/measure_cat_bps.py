@@ -7,15 +7,11 @@ from collections import defaultdict
 import shutil
 import sys
 
-angular_binning_path = os.environ['ANGULAR_BINNING_PATH']
-gaussian_cl_likelihood_path = os.environ['GAUSSIAN_CL_LIKELIHOOD_PATH']
-
-sys.path.insert(1, angular_binning_path)
-sys.path.insert(1, gaussian_cl_likelihood_path)
+sys.path.insert(1, os.environ['PIPELINE_DIR'])
+sys.path.insert(1, os.environ['GAUSSIAN_CL_LIKELIHOOD_PATH'])
 
 import gaussian_cl_likelihood
 from gaussian_cl_likelihood.python import simulation
-
 
 def measure_bps_config(pipeline_variables_path):
     config = configparser.ConfigParser()
