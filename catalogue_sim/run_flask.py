@@ -78,7 +78,7 @@ def main():
     np.savetxt(flask_output_dir+'rnd_seed.txt', np.array([rnd_seed]))
 
     pyFlask.flask([
-        "flask", pipeline_dir + "flask_3x2pt.config",
+        "flask", pipeline_dir + "software_utils/flask_3x2pt.config",
         "DIST:", "GAUSSIAN",
         "RNDSEED:", str(rnd_seed),
         "POISSON:", "1",
