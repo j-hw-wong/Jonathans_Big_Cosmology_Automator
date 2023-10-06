@@ -2,7 +2,7 @@
 
 start=$SECONDS
 
-PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/3x2pt_pipeline_final/set_variables_cat.ini"
+PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/3x2pt_pipeline_final/catalogue_sim/set_variables_cat.ini"
 export PIPELINE_VARIABLES_PATH
 
 echo Initialising random galaxy sample...
@@ -33,8 +33,10 @@ export NZ_TABLE_FILENAME
 export ELL_MIN
 export ELL_MAX
 
+cd ${PIPELINE_DIR}/software_utils/
 bash run_cosmosis.sh  &> ${SAVE_DIR}run_cosmosis_log.txt
 echo Done
+cd ${PIPELINE_DIR}/catalogue_sim/
 
 echo Converting Cosmosis output to Flask input format...
 python conv_fields_cosmosis_flask.py
@@ -69,7 +71,7 @@ do
 
 done
 
-echo Weak Lensing Tomography Pipeline Complete :\)
+echo Catalogue Simulation Pipeline Complete :\)
 
 duration=$((SECONDS-start))
 echo Total time elapsed: $duration
