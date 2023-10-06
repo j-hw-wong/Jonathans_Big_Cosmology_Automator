@@ -2,7 +2,7 @@
 
 start=$SECONDS
 
-PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/3x2pt_pipeline_final/set_variables_3x2pt_measurement.ini"
+PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/Jonathans_Big_Cosmology_Automator/set_variables_3x2pt_measurement.ini"
 export PIPELINE_VARIABLES_PATH
 export ANGULAR_BINNING_PATH
 export GAUSSIAN_CL_LIKELIHOOD_PATH

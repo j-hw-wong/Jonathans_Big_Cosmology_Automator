@@ -149,10 +149,15 @@ def execute_cat_compilation():
     dat = h5py.File(save_dir + 'cat_products/cat_indices/cat_indices_iter_{}.hdf5'.format(iter_no), 'r')
     inds = np.array(dat.get('Healpix_Index_(Position)'))
     zs = np.array(dat.get('Redshift_z'))
+
     dat.close()
 
     shear1_vals = []
     shear2_vals = []
+
+    shear1_vals_true = []
+    shear2_vals_true = []
+
     convergence_vals = []
 
     ras = []
@@ -194,9 +199,12 @@ def execute_cat_compilation():
             map_y2 = np.array(f.get('Shear_y2'))
 
             y1 = map_y1[inds_sub]
-            y1 = np.asarray(y1) + np.asarray(shape_noise_elements) / np.sqrt(2)
-
             y2 = map_y2[inds_sub]
+
+            shear1_vals_true = np.concatenate((shear1_vals_true, np.asarray(y1)))
+            shear2_vals_true = np.concatenate((shear2_vals_true, np.asarray(y2)))
+
+            y1 = np.asarray(y1) + np.asarray(shape_noise_elements) / np.sqrt(2)
             y2 = np.asarray(y2) + np.asarray(shape_noise_elements) / np.sqrt(2)
 
             shear1_vals = np.concatenate((shear1_vals, y1))
@@ -254,10 +262,11 @@ def execute_cat_compilation():
     master_cat.create_dataset("Convergence", data=convergence_vals, compression="gzip")
     master_cat.create_dataset("Shear_y1", data=shear1_vals, compression="gzip")
     master_cat.create_dataset("Shear_y2", data=shear2_vals, compression="gzip")
+    master_cat.create_dataset("Shear_y1_true", data=shear1_vals_true, compression="gzip")
+    master_cat.create_dataset("Shear_y2_true", data=shear2_vals_true, compression="gzip")
     master_cat.create_dataset("Healpix_Index_(Position)", data=inds, compression="gzip")
     master_cat.close()
 
 
 if __name__ == '__main__':
     execute_cat_compilation()
-
