@@ -5,13 +5,27 @@ start=$SECONDS
 PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/Jonathans_Big_Cosmology_Automator/pcl_measurement/set_variables_3x2pt_measurement.ini"
 export PIPELINE_VARIABLES_PATH
 
+source <(grep = $PIPELINE_VARIABLES_PATH)
+
 echo Creating nz...
-python create_nz_fromsim.py
+python create_nz_boundaries.py
+echo Done
+
+for ITER_NO in $(seq 1 $REALISATIONS)
+do
+  export ITER_NO
+
+  echo Measuring power spectra from mock catalogue - Realisation ${ITER_NO} / ${REALISATIONS}
+  python measure_cat_3x2pt_pcls.py
+
+done
+
+echo Calculating Cls averaged over realisations...
+python av_cls.py
 echo Done
 
 echo Running Cosmosis and calculating theoretical 3x2pt spectra...
 
-source <(grep = $PIPELINE_VARIABLES_PATH)
 export PIPELINE_DIR
 export COSMOSIS_ROOT_DIR
 export MEASUREMENT_SAVE_DIR
@@ -33,19 +47,6 @@ cd ${PIPELINE_DIR}/software_utils/
 bash run_cosmosis.sh  &> ${SAVE_DIR}run_cosmosis_log.txt
 echo Done
 cd ${PIPELINE_DIR}/pcl_measurement/
-
-for ITER_NO in $(seq 1 $REALISATIONS)
-do
-  export ITER_NO
-
-  echo Measuring power spectra from mock catalogue - Realisation ${ITER_NO} / ${REALISATIONS}
-  python measure_cat_3x2pt_pcls.py
-
-done
-
-echo Calculating Cls averaged over realisations...
-python av_cls.py
-echo Done
 
 GAUSSIAN_CL_LIKELIHOOD_PATH=${PIPELINE_DIR}gaussian_cl_likelihood/
 export GAUSSIAN_CL_LIKELIHOOD_PATH

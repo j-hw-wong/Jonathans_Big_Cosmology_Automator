@@ -17,6 +17,12 @@ def measure_pcls_config(pipeline_variables_path):
     cats_dir = str(config['measurement_setup']['CATALOGUE_DIR'])
     realisations = int(config['measurement_setup']['REALISATIONS'])
 
+    zmin = float(config['create_nz']['ZMIN'])
+    zmax = float(config['create_nz']['ZMAX'])
+
+    # Precision/step-size of z-range that is sampled over.
+    dz = float(config['create_nz']['DZ'])
+
     nside = int(config['measurement_setup']['NSIDE'])
     nbins = int(config['create_nz']['N_ZBIN'])
     npix = hp.nside2npix(nside)
@@ -35,6 +41,9 @@ def measure_pcls_config(pipeline_variables_path):
         'nside': nside,
         'nbins': nbins,
         'npix': npix,
+        'zmin': zmin,
+        'zmax': zmax,
+        'dz': dz,
         'raw_pcl_lmin_out': raw_pcl_lmin_out,
         'raw_pcl_lmax_out': raw_pcl_lmax_out,
         'save_dir': save_dir,
@@ -52,6 +61,9 @@ def maps_from_cats(config_dict, iter_no):
     nside = config_dict['nside']
     nbins = config_dict['nbins']
     npix = config_dict['npix']
+    zmin = config_dict['zmin']
+    zmax = config_dict['zmax']
+    dz = config_dict['dz']
     lmin_out = config_dict['raw_pcl_lmin_out']
     lmax_out = config_dict['raw_pcl_lmax_out']
     save_dir = config_dict['save_dir']
@@ -70,6 +82,10 @@ def maps_from_cats(config_dict, iter_no):
     shear1 = np.array(f.get('Shear_y1'))
     shear2 = np.array(f.get('Shear_y2'))
     indices = np.array(f.get('Healpix_Index_(Position)'))
+
+    # Extract all the redshift information to make the n(z)
+    true_z = np.array(f.get('True_Redshift_z'))
+    obs_gaussian_zs = np.array(f.get('Gaussian_Redshift_z'))
 
     f.close()
 
@@ -96,6 +112,57 @@ def maps_from_cats(config_dict, iter_no):
     z_boundaries_low = np.round(z_boundaries_low, 2)
     z_boundaries_mid = np.round(z_boundaries_mid, 2)
     z_boundaries_high = np.round(z_boundaries_high, 2)
+
+    # Let's make the n(z) here - useful for making theoretical predictions and inference analysis
+
+    sub_hist_bins = np.linspace(
+        zmin,
+        zmax + dz,
+        (round((zmax + dz - zmin) / dz)) + 1
+    )
+
+    hists = defaultdict(list)
+    for b in range(nbins):
+        hists["BIN_{}".format(b + 1)] = []
+
+    if dz == 0.1:
+        obs_gaussian_zs = np.around(obs_gaussian_zs, decimals=1)
+    elif dz == 0.01:
+        obs_gaussian_zs = np.around(obs_gaussian_zs, decimals=2)
+
+    for b in range(nbins):
+        bin_pop = true_z[np.where((obs_gaussian_zs >= z_boundaries_low[b]) & (obs_gaussian_zs < z_boundaries_high[b]))[0]]
+        bin_hist = np.histogram(bin_pop, bins=int(np.rint((zmax + dz - zmin) / dz)), range=(zmin, zmax))[0]
+        hists["BIN_{}".format(b + 1)].append(bin_hist)
+
+    nz = []
+    nz.append(sub_hist_bins[0:-1])
+
+    for b in range(nbins):
+        iter_hist_sample = hists["BIN_{}".format(b + 1)][0]
+        nz.append(iter_hist_sample)
+
+    final_cat_tab = np.asarray(nz)
+
+    if sigma_phot == 0:
+        if zmin != 0:
+            final_cat_tab = np.transpose(final_cat_tab)
+            pad_vals = int((zmin-0)/dz)
+            for i in range(pad_vals):
+                z_pad = np.array([zmin-((i+1)*dz)])
+                pad_arr = np.concatenate((z_pad, np.zeros(nbins)))
+                final_cat_tab = np.vstack((pad_arr, final_cat_tab))
+
+            final_cat_tab = np.transpose(final_cat_tab)
+
+    nz_save_dir = save_dir + 'nz_tables/'
+    if not os.path.exists(nz_save_dir):
+        os.makedirs(nz_save_dir)
+
+    np.savetxt(nz_save_dir + 'nz_iter{}.txt'.format(iter_no),
+               np.transpose(final_cat_tab))
+
+    # Let's make the 3x2pt maps now
 
     ell_arr = np.arange(lmin_out, lmax_out + 1, 1)
 

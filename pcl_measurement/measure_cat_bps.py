@@ -13,6 +13,7 @@ sys.path.insert(1, os.environ['GAUSSIAN_CL_LIKELIHOOD_PATH'])
 import gaussian_cl_likelihood
 from gaussian_cl_likelihood.python import simulation
 
+
 def measure_bps_config(pipeline_variables_path):
     config = configparser.ConfigParser()
     config.read(pipeline_variables_path)
