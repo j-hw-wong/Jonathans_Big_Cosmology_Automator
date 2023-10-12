@@ -6,6 +6,7 @@ import pymaster as nmt
 from collections import defaultdict
 import shutil
 import sys
+import linecache
 
 sys.path.insert(1, os.environ['PIPELINE_DIR'])
 sys.path.insert(1, os.environ['GAUSSIAN_CL_LIKELIHOOD_PATH'])
@@ -119,6 +120,30 @@ def cl_to_bp(cl_dir, bp_dir, bin_i, bin_j, pbl):
         os.makedirs(bp_dir)
 
     np.savetxt(bp_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j), this_bp)
+
+
+def calc_stdem_bps(bp_dir, n_bps, bin_i, bin_j, realisations):
+    bps_err = []
+
+    for x in range(n_bps):
+
+        bp_vals = []
+
+        for y in range(realisations):
+            cl_file = bp_dir + 'iter_{}/bin_{}_{}.txt'.format(y + 1, bin_i, bin_j)
+            a = linecache.getline(
+                cl_file,
+                x + 1).split()
+            bp_vals.append(float(a[0]))
+
+        bp_vals = np.asarray(bp_vals)
+        bp_av = np.zeros(len(bp_vals))
+        bp_av += np.mean(bp_vals)
+
+        bps_err.append(np.sqrt((sum((bp_vals - bp_av)**2))/(realisations**2)))
+
+    np.savetxt(bp_dir + 'bin_%s_%s_err.txt' % (bin_i, bin_j),
+               np.transpose(bps_err))
 
 
 ###############################################################################################
@@ -445,6 +470,7 @@ def main():
     no_iter = config_dict['no_iter']
     mask_path = config_dict['mask_path']
 
+    n_bandpowers = config_dict['n_bandpowers']
     bp_bins = config_dict['bp_bins']
     ell_arr = config_dict['ell_arr']
     pbl = config_dict['pbl']
@@ -519,6 +545,7 @@ def main():
 
             # Convert Pseudo-Cl for measured GGL into bandpower
             cl_to_bp(cl_dir=obs_gal_shear_cl_dir, bp_dir=gal_shear_bps_dir, bin_i=i + 1, bin_j=j + 1, pbl=pbl)
+            calc_stdem_bps(bp_dir=gal_shear_bps_dir, n_bps=n_bandpowers, bin_i=i + 1, bin_j=j + 1, realisations=no_iter)
 
             # Calculate the theoretical PCl bandpower for the fiducial full-sky GGL
             process_02_pcls(
@@ -552,6 +579,8 @@ def main():
                     lmax_out=output_lmax)
 
                 cl_to_bp(cl_dir=obs_gal_cl_dir, bp_dir=gal_bps_dir, bin_i=i + 1, bin_j=j + 1, pbl=pbl)
+                calc_stdem_bps(bp_dir=gal_bps_dir, n_bps=n_bandpowers, bin_i=i + 1, bin_j=j + 1,
+                               realisations=no_iter)
 
                 process_00_pcls(
                     config_dict=config_dict,
@@ -589,6 +618,9 @@ def main():
                         bin_i=i + 1,
                         bin_j=j + 1,
                         pbl=pbl)
+
+                    calc_stdem_bps(bp_dir=shear_bps_dir + shear_component_dir, n_bps=n_bandpowers, bin_i=i + 1,
+                                   bin_j=j + 1, realisations=no_iter)
 
                 for spin2_component in ['EE', 'BB']:
                     

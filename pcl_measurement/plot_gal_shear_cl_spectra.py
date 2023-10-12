@@ -139,8 +139,8 @@ for i in bins:
             ell = open_dat(save_dir + 'theory_cls/galaxy_shear_cl/ell_measured.txt')
             bp = open_dat(save_dir + 'theory_cls/galaxy_shear_cl/PCl_Bandpowers_gal_E_bin_{}_{}.txt'.format(i,j))
 
-            ell_measured = open_dat(save_dir + 'measured_3x2pt_bps_l{}-{}/galaxy_shear_bp/ell_measured.txt'.format(lmin, lmax))
-            bp_measured = open_dat(save_dir + 'measured_3x2pt_bps_l{}-{}/galaxy_shear_bp/bin_{}_{}.txt'.format(lmin, lmax, i, j))
+            ell_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/ell_measured.txt')
+            bp_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/bin_{}_{}.txt'.format(i, j))
 
             rect = ((i * sz) + (0.08 * i) - 0.15, (j * sz) + (0.04 * j) - 0.0875, 1.25*sz, sz)
             #rect = (i*sz,j*sz,sz,sz)
