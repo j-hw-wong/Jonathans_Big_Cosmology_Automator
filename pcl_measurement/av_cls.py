@@ -52,6 +52,8 @@ def calc_av_cls(cl_dir, ell_min, ell_max, bin_i, bin_j, realisations):
     np.savetxt(cl_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j),
                np.transpose(cls))
 
+    np.savetxt(cl_dir + 'ell.txt', np.transpose(ell))
+
 
 def calc_stdem_cls(cl_dir, ell_min, ell_max, bin_i, bin_j, realisations):
     cls_err = []
