@@ -72,13 +72,16 @@ for i in bins:
             ell_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/ell_measured.txt')
             bp_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/bin_{}_{}.txt'.format(i, j))
 
+            bp_err = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/bin_{}_{}_err.txt'.format(i, j))
+
             rect = ((i * sz) + (0.08 * i) - 0.15, (j * sz) + (0.04 * j) - 0.0875, 1.25*sz, sz)
             #rect = (i*sz,j*sz,sz,sz)
             ax =fig.add_axes(rect)
 
             plt.plot(ell, bp, label='Theoretical Spectra', color='black',zorder=1)
-            plt.plot(ell,bp_measured,color=colors[3],label='Measured Spectra',linestyle='--',zorder=10)
+            #plt.plot(ell,bp_measured,color=colors[3],label='Measured Spectra',linestyle='--',zorder=10)
             #plt.plot(ell,bp_measured,color=colors[3],zorder=10,linestyle='--',label='Measured Spectra')
+            plt.errorbar(ell,bp_measured,xerr=None, yerr=bp_err,color=colors[3],label='Measured Spectra',linestyle='--',zorder=10)
             plt.xscale('log')
 
 
@@ -137,17 +140,19 @@ for i in bins:
         if i>0:
 
             ell = open_dat(save_dir + 'theory_cls/galaxy_shear_cl/ell_measured.txt')
-            bp = open_dat(save_dir + 'theory_cls/galaxy_shear_cl/PCl_Bandpowers_gal_E_bin_{}_{}.txt'.format(i,j))
+            bp = open_dat(save_dir + 'theory_cls/galaxy_shear_cl/PCl_Bandpowers_gal_E_bin_{}_{}.txt')
 
             ell_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/ell_measured.txt')
             bp_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/bin_{}_{}.txt'.format(i, j))
+
+            bp_err = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/bin_{}_{}_err.txt'.format(i, j))
 
             rect = ((i * sz) + (0.08 * i) - 0.15, (j * sz) + (0.04 * j) - 0.0875, 1.25*sz, sz)
             #rect = (i*sz,j*sz,sz,sz)
             ax =fig.add_axes(rect)
             plt.axhline(y=0,color='black')
-            plt.plot(ell, ((bp_measured)/(bp))-1, label='Fractional Difference', color=colors[3],zorder=1,linestyle='--')
-
+            #plt.plot(ell, ((bp_measured)/(bp))-1, label='Fractional Difference', color=colors[3],zorder=1,linestyle='--')
+            plt.errorbar(ell, ((bp_measured)/(bp))-1, xerr=None, yerr=(bp_err/bp),label='Fractional Difference', color=colors[3],zorder=1,linestyle='--')
             plt.xscale('log')
 
             if i == 1:

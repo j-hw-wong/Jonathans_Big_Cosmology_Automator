@@ -190,7 +190,7 @@ def maps_from_cats(config_dict, iter_no):
     for folder in [gal_dir, gal_shear_dir, k_dir, y1_dir, y1y2_dir, y2y1_dir, y2_dir]:
         if not os.path.exists(folder):
             os.makedirs(folder)
-        np.savetxt(folder + 'ell_measured.txt',
+        np.savetxt(folder + 'ell.txt',
                    np.transpose(ell_arr))
 
     poisson_cls_theory_dir = save_dir + 'raw_noise_cls/galaxy_cl/iter_{}/'.format(iter_no)
@@ -263,12 +263,16 @@ def maps_from_cats(config_dict, iter_no):
         np.savetxt(poisson_cls_theory_dir + 'bin_{}_{}.txt'.format(i + 1, i + 1),
                    np.transpose(poisson_cls_theory))
 
+        np.savetxt(poisson_cls_theory_dir + 'ell.txt', np.transpose(ell_arr))
+
         # Need to calculate the Shear shape noise - dependent on number density in bin. See Upham 2021 Eq.8
         she_nl = ((((sigma_e / np.sqrt(2)) ** 2) / (len(inds) / sky_coverage)) * w_survey) + np.zeros(
             len(np.arange(lmin_out, lmax_out + 1)))
 
         np.savetxt(shape_noise_cls_dir + 'bin_{}_{}.txt'.format(i + 1, i + 1),
                    np.transpose(she_nl))
+
+        np.savetxt(shape_noise_cls_dir + 'ell.txt', np.transpose(ell_arr))
 
         # Now we need to normalise each of the weak lensing observables maps - take the average value in
         # each pixel, i.e. divide by the count in each pixel
@@ -353,6 +357,10 @@ def measure_00_pcls(lmin_out, lmax_out, cut_maps_dic, spectra_type, bin_i, bin_j
     np.savetxt(measured_pcl_save_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j),
                np.transpose(measured_pcl))
 
+    ells = np.arange(lmin_out, lmax_out+1, 1)
+
+    #np.savetxt(measured_pcl_save_dir + 'ell.txt', np.transpose(ells))
+
 
 def measure_02_pcls(lmin_out, lmax_out, cut_maps_dic, spectra_type, bin_i, bin_j, measured_pcl_save_dir):
 
@@ -393,6 +401,10 @@ def measure_02_pcls(lmin_out, lmax_out, cut_maps_dic, spectra_type, bin_i, bin_j
     np.savetxt(measured_pcl_save_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j),
                np.transpose(measured_pcls[spectra_type]))
 
+    ells = np.arange(lmin_out, lmax_out+1, 1)
+
+    #np.savetxt(measured_pcl_save_dir + 'ell.txt', np.transpose(ells))
+
 
 def measure_22_pcls(lmin_out, lmax_out, cut_maps_dic, spectra_type, bin_i, bin_j, measured_pcl_save_dir):
 
@@ -414,6 +426,10 @@ def measure_22_pcls(lmin_out, lmax_out, cut_maps_dic, spectra_type, bin_i, bin_j
 
     np.savetxt(measured_pcl_save_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j),
                np.transpose(measured_pcl_components[spectra_type]))
+
+    ells = np.arange(lmin_out, lmax_out+1, 1)
+
+    #np.savetxt(measured_pcl_save_dir + 'ell.txt', np.transpose(ells))
 
 
 def execute_pcl_measurement(realisation):
@@ -529,13 +545,13 @@ def execute_pcl_measurement(realisation):
 
     ell_arr = np.arange(raw_pcl_lmin_out, raw_pcl_lmax_out + 1, 1)
 
-    np.savetxt(save_dir + 'raw_noise_cls/galaxy_cl/ell_measured.txt',
+    np.savetxt(save_dir + 'raw_noise_cls/galaxy_cl/ell.txt',
                np.transpose(ell_arr))
 
-    np.savetxt(save_dir + 'raw_noise_cls/shear_cl/ell_measured.txt',
+    np.savetxt(save_dir + 'raw_noise_cls/shear_cl/ell.txt',
                np.transpose(ell_arr))
 
-    np.savetxt(save_dir + 'raw_noise_cls/galaxy_shear_cl/ell_measured.txt',
+    np.savetxt(save_dir + 'raw_noise_cls/galaxy_shear_cl/ell.txt',
                np.transpose(ell_arr))
 
     for i in range(nbins):
@@ -545,6 +561,9 @@ def execute_pcl_measurement(realisation):
                 gal_shear_noise_cls_dir + 'bin_%s_%s.txt' % (i + 1, j + 1),
                 np.transpose(null_noise_cls)
             )
+
+            np.savetxt(gal_shear_noise_cls_dir + 'ell.txt', np.transpose(ell_arr))
+
             if i > j:
                 poisson_cls_theory_dir = save_dir + 'raw_noise_cls/galaxy_cl/iter_{}/'.format(realisation)
                 np.savetxt(

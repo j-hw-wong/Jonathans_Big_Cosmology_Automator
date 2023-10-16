@@ -5,7 +5,6 @@ import sys
 angular_binning_path = os.environ['ANGULAR_BINNING_PATH']
 gaussian_cl_likelihood_path = os.environ['GAUSSIAN_CL_LIKELIHOOD_PATH']
 pipeline_dir = os.environ['PIPELINE_DIR']
-pipeline_variables_path = os.environ['PIPELINE_VARIABLES_PATH']
 
 sys.path.insert(1, pipeline_dir)
 sys.path.insert(1, angular_binning_path)

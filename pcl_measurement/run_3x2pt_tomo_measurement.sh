@@ -17,7 +17,7 @@ echo Measuring power spectra from mock catalogues in parallel...
 echo Done
 
 echo Calculating Cls averaged over realisations...
-#python av_cls.py
+python av_cls.py
 echo Done
 
 echo Running Cosmosis and calculating theoretical 3x2pt spectra...
@@ -56,8 +56,8 @@ python conv_bps.py
 echo Done
 
 echo Calculating 3x2pt covariance from simulations...
-python cov_fromsim.py
-#python cov_fromsim_tot.py
+#python cov_fromsim.py
+python cov_fromsim_tot.py
 echo Done
 
 echo Weak Lensing Tomography Pipeline Complete :\)

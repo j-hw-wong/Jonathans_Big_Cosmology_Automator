@@ -17,6 +17,7 @@ GAUSSIAN_CL_LIKELIHOOD_PATH=${PIPELINE_DIR}gaussian_cl_likelihood/
 ANGULAR_BINNING_PATH=${PIPELINE_DIR}angular_binning/
 export GAUSSIAN_CL_LIKELIHOOD_PATH
 export ANGULAR_BINNING_PATH
+export PIPELINE_DIR
 
 echo Setting up parameter grid...
 python setup_inference_grid.py
