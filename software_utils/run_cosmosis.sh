@@ -8,8 +8,8 @@ source config/setup-cosmosis
 make
 
 echo $PIPELINE_DIR
-COSMOSIS_PIPELINE_PATH=${PIPELINE_DIR}cosmosis_config.ini
-COSMOSIS_VARIABLES_PATH=${PIPELINE_DIR}cosmosis_params.ini
+COSMOSIS_PIPELINE_PATH=${PIPELINE_DIR}/software_utils/cosmosis_config.ini
+COSMOSIS_VARIABLES_PATH=${PIPELINE_DIR}/software_utils/cosmosis_params.ini
 export COSMOSIS_PIPELINE_PATH
 export COSMOSIS_VARIABLES_PATH
 

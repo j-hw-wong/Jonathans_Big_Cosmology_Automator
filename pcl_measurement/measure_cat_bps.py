@@ -6,12 +6,10 @@ import pymaster as nmt
 from collections import defaultdict
 import shutil
 import sys
+import linecache
 
-angular_binning_path = os.environ['ANGULAR_BINNING_PATH']
-gaussian_cl_likelihood_path = os.environ['GAUSSIAN_CL_LIKELIHOOD_PATH']
-
-sys.path.insert(1, angular_binning_path)
-sys.path.insert(1, gaussian_cl_likelihood_path)
+sys.path.insert(1, os.environ['PIPELINE_DIR'])
+sys.path.insert(1, os.environ['GAUSSIAN_CL_LIKELIHOOD_PATH'])
 
 import gaussian_cl_likelihood
 from gaussian_cl_likelihood.python import simulation
@@ -113,6 +111,11 @@ def measured_cls_to_obs_cls(measured_cls_dir, obs_cls_dir, bin_i, bin_j, lmin_ou
 
     np.savetxt(obs_cls_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j), obs_cl)
 
+    measured_ell = np.loadtxt(measured_cls_dir + 'ell.txt')
+    obs_ell = measured_ell[lmin_out:lmax_out+1]
+
+    np.savetxt(obs_cls_dir + 'ell.txt', np.transpose(obs_ell))
+
 
 def cl_to_bp(cl_dir, bp_dir, bin_i, bin_j, pbl):
     this_cl = np.loadtxt(cl_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j))
@@ -122,6 +125,30 @@ def cl_to_bp(cl_dir, bp_dir, bin_i, bin_j, pbl):
         os.makedirs(bp_dir)
 
     np.savetxt(bp_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j), this_bp)
+
+
+def calc_stdem_bps(bp_dir, n_bps, bin_i, bin_j, realisations):
+    bps_err = []
+
+    for x in range(n_bps):
+
+        bp_vals = []
+
+        for y in range(realisations):
+            bp_file = bp_dir + 'iter_{}/bin_{}_{}.txt'.format(y + 1, bin_i, bin_j)
+            a = linecache.getline(
+                bp_file,
+                x + 1).split()
+            bp_vals.append(float(a[0]))
+
+        bp_vals = np.asarray(bp_vals)
+        bp_av = np.zeros(len(bp_vals))
+        bp_av += np.mean(bp_vals)
+
+        bps_err.append(np.sqrt((sum((bp_vals - bp_av)**2))/(realisations**2)))
+
+    np.savetxt(bp_dir + 'bin_%s_%s_err.txt' % (bin_i, bin_j),
+               np.transpose(bps_err))
 
 
 ###############################################################################################
@@ -265,8 +292,8 @@ def process_00_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
     np.savetxt(bp_save_dir + 'PCl_Bandpowers_{}_bin_{}_{}.txt'.format(spectra_type, bin_i, bin_j),
                np.transpose(binned_theory_pcl))
 
-    if os.path.isfile(bp_save_dir + 'ell_measured.txt') is False:
-        np.savetxt(bp_save_dir + 'ell_measured.txt',
+    if os.path.isfile(bp_save_dir + 'ell.txt') is False:
+        np.savetxt(bp_save_dir + 'ell.txt',
                    np.transpose(ell_arr))
 
 
@@ -368,8 +395,8 @@ def process_02_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
     np.savetxt(bp_save_dir + 'PCl_Bandpowers_{}_bin_{}_{}.txt'.format(spectra_type, bin_i, bin_j),
                np.transpose(binned_theory_pcls[spectra_type]))
 
-    if os.path.isfile(bp_save_dir + 'ell_measured.txt') is False:
-        np.savetxt(bp_save_dir + 'ell_measured.txt',
+    if os.path.isfile(bp_save_dir + 'ell.txt') is False:
+        np.savetxt(bp_save_dir + 'ell.txt',
                    np.transpose(ell_arr))
 
 
@@ -434,8 +461,8 @@ def process_22_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
     np.savetxt(bp_save_dir + 'PCl_Bandpowers_{}_bin_{}_{}.txt'.format(spectra_type, bin_i, bin_j),
                np.transpose(binned_theory_pcls[spectra_type]))
 
-    if os.path.isfile(bp_save_dir + 'ell_measured.txt') is False:
-        np.savetxt(bp_save_dir + 'ell_measured.txt',
+    if os.path.isfile(bp_save_dir + 'ell.txt') is False:
+        np.savetxt(bp_save_dir + 'ell.txt',
                    np.transpose(ell_arr))
 
 
@@ -448,6 +475,7 @@ def main():
     no_iter = config_dict['no_iter']
     mask_path = config_dict['mask_path']
 
+    n_bandpowers = config_dict['n_bandpowers']
     bp_bins = config_dict['bp_bins']
     ell_arr = config_dict['ell_arr']
     pbl = config_dict['pbl']
@@ -478,7 +506,7 @@ def main():
                    y2_bps_dir]:
         if not os.path.exists(folder):
             os.makedirs(folder)
-        np.savetxt(folder + 'ell_measured.txt',
+        np.savetxt(folder + 'ell.txt',
                    np.transpose(ell_arr))
 
     gal_cl_dir = recov_cat_cls_dir + 'galaxy_cl/'
@@ -499,114 +527,6 @@ def main():
     shutil.copytree(save_dir + 'cosmosis/galaxy_cl', theory_cls_dir + 'galaxy_cl')
     shutil.copytree(save_dir + 'cosmosis/galaxy_shear_cl', theory_cls_dir + 'galaxy_shear_cl')
 
-    # Get ready for some magic.. Lol.
-    for i in range(nbins):
-        for j in range(nbins):
-
-            # Cut the raw PCls measured from Catalogues to a specific range in lmin, lmax
-            measured_cls_to_obs_cls(
-                measured_cls_dir=gal_shear_cl_dir,
-                obs_cls_dir=obs_gal_shear_cl_dir,
-                bin_i=i+1,
-                bin_j=j+1,
-                lmin_out=output_lmin,
-                lmax_out=output_lmax)
-
-            measured_cls_to_obs_cls(
-                measured_cls_dir=noise_cls_dir + 'galaxy_shear_cl/',
-                obs_cls_dir=obs_noise_cls_dir + 'galaxy_shear_cl/',
-                bin_i=i+1,
-                bin_j=j+1,
-                lmin_out=output_lmin,
-                lmax_out=output_lmax)
-
-            # Convert Pseudo-Cl for measured GGL into bandpower
-            cl_to_bp(cl_dir=obs_gal_shear_cl_dir, bp_dir=gal_shear_bps_dir, bin_i=i + 1, bin_j=j + 1, pbl=pbl)
-
-            # Calculate the theoretical PCl bandpower for the fiducial full-sky GGL
-            process_02_pcls(
-                config_dict=config_dict,
-                theory_cl_dir=theory_cls_dir,
-                noise_cl_dir=obs_noise_cls_dir,
-                spectra_type='gal_E',
-                bin_i=i + 1,
-                bin_j=j + 1,
-                obs_mask_path=mask_path,
-                bp_bins=bp_bins,
-                ell_arr=ell_arr,
-                pbl=pbl)
-
-            if i >= j:
-
-                measured_cls_to_obs_cls(
-                    measured_cls_dir=gal_cl_dir,
-                    obs_cls_dir=obs_gal_cl_dir,
-                    bin_i=i+1, 
-                    bin_j=j+1, 
-                    lmin_out=output_lmin,
-                    lmax_out=output_lmax)
-
-                measured_cls_to_obs_cls(
-                    measured_cls_dir=noise_cls_dir + 'galaxy_cl/',
-                    obs_cls_dir=obs_noise_cls_dir + 'galaxy_cl/',
-                    bin_i=i+1,
-                    bin_j=j+1,
-                    lmin_out=output_lmin,
-                    lmax_out=output_lmax)
-
-                cl_to_bp(cl_dir=obs_gal_cl_dir, bp_dir=gal_bps_dir, bin_i=i + 1, bin_j=j + 1, pbl=pbl)
-
-                process_00_pcls(
-                    config_dict=config_dict,
-                    theory_cl_dir=theory_cls_dir,
-                    noise_cl_dir=noise_cls_dir,
-                    spectra_type='gal_gal',
-                    bin_i=i + 1,
-                    bin_j=j + 1,
-                    obs_mask_path=mask_path,
-                    bp_bins=bp_bins,
-                    ell_arr=ell_arr,
-                    pbl=pbl)
-
-                measured_cls_to_obs_cls(
-                    measured_cls_dir=noise_cls_dir + 'shear_cl/',
-                    obs_cls_dir=obs_noise_cls_dir + 'shear_cl/',
-                    bin_i=i + 1,
-                    bin_j=j + 1,
-                    lmin_out=output_lmin,
-                    lmax_out=output_lmax)
-
-                for shear_component_dir in ['Cl_TT/', 'Cl_EE/', 'Cl_EB/', 'Cl_BE/', 'Cl_BB/']:
-
-                    measured_cls_to_obs_cls(
-                        measured_cls_dir=shear_cl_dir + shear_component_dir,
-                        obs_cls_dir=obs_shear_cl_dir + shear_component_dir,
-                        bin_i=i+1, 
-                        bin_j=j+1, 
-                        lmin_out=output_lmin,
-                        lmax_out=output_lmax)
-
-                    cl_to_bp(
-                        cl_dir=obs_shear_cl_dir + shear_component_dir,
-                        bp_dir=shear_bps_dir + shear_component_dir,
-                        bin_i=i + 1,
-                        bin_j=j + 1,
-                        pbl=pbl)
-
-                for spin2_component in ['EE', 'BB']:
-                    
-                    process_22_pcls(
-                        config_dict=config_dict,
-                        theory_cl_dir=theory_cls_dir,
-                        noise_cl_dir=noise_cls_dir,
-                        spectra_type=spin2_component,
-                        bin_i=i + 1,
-                        bin_j=j + 1,
-                        obs_mask_path=mask_path,
-                        bp_bins=bp_bins,
-                        ell_arr=ell_arr,
-                        pbl=pbl)
-
     for it in range(no_iter):
 
         gal_cl_it_dir = gal_cl_dir + 'iter_{}/'.format(it + 1)
@@ -625,7 +545,7 @@ def main():
                     bin_j=j + 1,
                     lmin_out=output_lmin,
                     lmax_out=output_lmax)
-
+                # save bp array here
                 cl_to_bp(cl_dir=obs_gal_shear_cl_dir + 'iter_{}/'.format(it + 1),
                          bp_dir=gal_shear_bp_it_dir,
                          bin_i=i + 1,
@@ -664,6 +584,118 @@ def main():
                                  bin_i=i + 1,
                                  bin_j=j + 1,
                                  pbl=pbl)
+
+    # Get ready for some magic.. Lol.
+    for i in range(nbins):
+        for j in range(nbins):
+
+            # Cut the raw PCls measured from Catalogues to a specific range in lmin, lmax
+            measured_cls_to_obs_cls(
+                measured_cls_dir=gal_shear_cl_dir,
+                obs_cls_dir=obs_gal_shear_cl_dir,
+                bin_i=i + 1,
+                bin_j=j + 1,
+                lmin_out=output_lmin,
+                lmax_out=output_lmax)
+
+            measured_cls_to_obs_cls(
+                measured_cls_dir=noise_cls_dir + 'galaxy_shear_cl/',
+                obs_cls_dir=obs_noise_cls_dir + 'galaxy_shear_cl/',
+                bin_i=i + 1,
+                bin_j=j + 1,
+                lmin_out=output_lmin,
+                lmax_out=output_lmax)
+
+            # Convert Pseudo-Cl for measured GGL into bandpower
+            cl_to_bp(cl_dir=obs_gal_shear_cl_dir, bp_dir=gal_shear_bps_dir, bin_i=i + 1, bin_j=j + 1, pbl=pbl)
+            calc_stdem_bps(bp_dir=gal_shear_bps_dir, n_bps=n_bandpowers, bin_i=i + 1, bin_j=j + 1, realisations=no_iter)
+
+            # Calculate the theoretical PCl bandpower for the fiducial full-sky GGL
+            process_02_pcls(
+                config_dict=config_dict,
+                theory_cl_dir=theory_cls_dir,
+                noise_cl_dir=obs_noise_cls_dir,
+                spectra_type='gal_E',
+                bin_i=i + 1,
+                bin_j=j + 1,
+                obs_mask_path=mask_path,
+                bp_bins=bp_bins,
+                ell_arr=ell_arr,
+                pbl=pbl)
+
+            if i >= j:
+
+                measured_cls_to_obs_cls(
+                    measured_cls_dir=gal_cl_dir,
+                    obs_cls_dir=obs_gal_cl_dir,
+                    bin_i=i + 1,
+                    bin_j=j + 1,
+                    lmin_out=output_lmin,
+                    lmax_out=output_lmax)
+
+                measured_cls_to_obs_cls(
+                    measured_cls_dir=noise_cls_dir + 'galaxy_cl/',
+                    obs_cls_dir=obs_noise_cls_dir + 'galaxy_cl/',
+                    bin_i=i + 1,
+                    bin_j=j + 1,
+                    lmin_out=output_lmin,
+                    lmax_out=output_lmax)
+
+                cl_to_bp(cl_dir=obs_gal_cl_dir, bp_dir=gal_bps_dir, bin_i=i + 1, bin_j=j + 1, pbl=pbl)
+                calc_stdem_bps(bp_dir=gal_bps_dir, n_bps=n_bandpowers, bin_i=i + 1, bin_j=j + 1,
+                               realisations=no_iter)
+
+                process_00_pcls(
+                    config_dict=config_dict,
+                    theory_cl_dir=theory_cls_dir,
+                    noise_cl_dir=noise_cls_dir,
+                    spectra_type='gal_gal',
+                    bin_i=i + 1,
+                    bin_j=j + 1,
+                    obs_mask_path=mask_path,
+                    bp_bins=bp_bins,
+                    ell_arr=ell_arr,
+                    pbl=pbl)
+
+                measured_cls_to_obs_cls(
+                    measured_cls_dir=noise_cls_dir + 'shear_cl/',
+                    obs_cls_dir=obs_noise_cls_dir + 'shear_cl/',
+                    bin_i=i + 1,
+                    bin_j=j + 1,
+                    lmin_out=output_lmin,
+                    lmax_out=output_lmax)
+
+                for shear_component_dir in ['Cl_TT/', 'Cl_EE/', 'Cl_EB/', 'Cl_BE/', 'Cl_BB/']:
+                    measured_cls_to_obs_cls(
+                        measured_cls_dir=shear_cl_dir + shear_component_dir,
+                        obs_cls_dir=obs_shear_cl_dir + shear_component_dir,
+                        bin_i=i + 1,
+                        bin_j=j + 1,
+                        lmin_out=output_lmin,
+                        lmax_out=output_lmax)
+
+                    cl_to_bp(
+                        cl_dir=obs_shear_cl_dir + shear_component_dir,
+                        bp_dir=shear_bps_dir + shear_component_dir,
+                        bin_i=i + 1,
+                        bin_j=j + 1,
+                        pbl=pbl)
+
+                    calc_stdem_bps(bp_dir=shear_bps_dir + shear_component_dir, n_bps=n_bandpowers, bin_i=i + 1,
+                                   bin_j=j + 1, realisations=no_iter)
+
+                for spin2_component in ['EE', 'BB']:
+                    process_22_pcls(
+                        config_dict=config_dict,
+                        theory_cl_dir=theory_cls_dir,
+                        noise_cl_dir=noise_cls_dir,
+                        spectra_type=spin2_component,
+                        bin_i=i + 1,
+                        bin_j=j + 1,
+                        obs_mask_path=mask_path,
+                        bp_bins=bp_bins,
+                        ell_arr=ell_arr,
+                        pbl=pbl)
 
 
 if __name__ == '__main__':

@@ -11,7 +11,7 @@ import configparser
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
-
+from multiprocessing import Process
 
 def nz_fromsim_config(pipeline_variables_path):
 
@@ -106,7 +106,7 @@ def create_zbin_boundaries(config_dict):
                    np.transpose(z_boundaries),
                    fmt=['%.2f', '%.2f', '%.2f'])
 
-    if bin_type == 'EQUI_POP':
+    elif bin_type == 'EQUI_POP':
 
         # Need to generate a rnd_sample from the measured n(z), i.e. n(z)*z for each z
 
@@ -135,7 +135,7 @@ def create_zbin_boundaries(config_dict):
                    np.transpose(z_boundaries),
                    fmt=['%.2f', '%.2f', '%.2f'])
 
-    if bin_type == 'EQUI_D':
+    elif bin_type == 'EQUI_D':
         # we need to go back to the directory of the simulation and into the cosmosis/distances file for the
         # comoving distance as a function of z. Then cut out the range that corresponds to the z_range of observation
         # then define equally spaced boundaries in d-space and take the corresponding z boundaries
@@ -175,113 +175,12 @@ def create_zbin_boundaries(config_dict):
                    np.transpose(z_boundaries),
                    fmt=['%.2f', '%.2f', '%.2f'])
 
+    else:
+        print(bin_type)
+        print("Bin Type Not Recognised! Must be 'EQUI_Z', 'EQUI_POP', or 'EQUI_D'")
+        sys.exit()
+
     return np.asarray(z_boundaries)
-
-
-def create_nz_fromsim(config_dict, z_boundaries, redshift_type):
-
-    """
-    Create the tomographic n(z) from the measurement parameters stored in the config dictionary, and the redshift
-    boundary columns for the given tomographic configuration.
-
-    Parameters
-    ----------
-    config_dict (dict): Dictionary of the measurement parameters read-in from the 'set_variables_3x2pt_measurement.ini'
-                        file
-    z_boundaries (arr): Array of the redshift boundaries corresponding to each bin - generated from
-                        'create_zbin_boundaries' function
-    redshift_type (str):    Redshift type to bin into the n(z) - either the 'Observed' redshifts (i.e. photo-z) or the
-                            'True' redshifts (i.e. spec-z)
-
-    Returns
-    -------
-    Array describing the tomographic n(z) - one column of the redshift, followed by columns of the number density
-    per bin.
-    """
-
-    zmin = config_dict['zmin']
-    zmax = config_dict['zmax']
-    dz = config_dict['dz']
-    nbins = config_dict['nbins']
-    bin_type = config_dict['bin_type']
-    save_dir = config_dict['save_dir']
-    catalogue_dir = config_dict['catalogue_dir']
-    realisations = config_dict['realisations']
-    nz_table_filename = config_dict['nz_table_filename']
-    sigma_phot = config_dict['sigma_phot']
-    sigma_shear = config_dict['sigma_shear']
-
-    z_boundaries_low = z_boundaries[0]
-    z_boundaries_mid = z_boundaries[1]
-    z_boundaries_high = z_boundaries[2]
-
-    z_boundaries_low = z_boundaries_low.round(decimals=2)
-    z_boundaries_mid = z_boundaries_mid.round(decimals=2)
-    z_boundaries_high = z_boundaries_high.round(decimals=2)
-
-    sub_hist_bins = np.linspace(
-        zmin,
-        zmax + dz,
-        (round((zmax + dz - zmin) / dz)) + 1
-    )
-
-    hists = defaultdict(list)
-    for b in range(nbins):
-        hists["BIN_{}".format(b + 1)] = []
-
-    for i in range(realisations):
-
-        f = h5py.File(catalogue_dir + 'cat_products/master_cats/master_cat_poisson_sampled_{}.hdf5'.format(i + 1), 'r')
-        true_z = np.array(f.get('True_Redshift_z'))
-
-        if redshift_type == 'Observed':
-            # obs_z = np.array(f.get('Redshift_z'))
-            obs_z = np.array(f.get('Gaussian_Redshift_z')) # when including Catastrophic Photo-z errors
-        elif redshift_type == 'True':
-            obs_z = true_z
-        else:
-            print('Unknown Redshift Type - Please specify \'Observed\' or \'True\' for n(z) generation')
-            sys.exit()
-
-        if dz == 0.1:
-            obs_z = np.around(obs_z, decimals=1)
-        elif dz == 0.01:
-            obs_z = np.around(obs_z, decimals=2)
-
-        f.close()
-        for b in range(nbins):
-            bin_pop = true_z[np.where((obs_z >= z_boundaries_low[b]) & (obs_z < z_boundaries_high[b]))[0]]
-            bin_hist = np.histogram(bin_pop, bins=int(np.rint((zmax + dz - zmin) / dz)), range=(zmin, zmax))[0]
-            hists["BIN_{}".format(b + 1)].append(bin_hist)
-
-    nz = []
-    nz.append(sub_hist_bins[0:-1])
-
-    for b in range(nbins):
-        iter_hist_sample = hists["BIN_{}".format(b + 1)]
-        nz.append(np.mean(np.asarray(iter_hist_sample), axis=0))
-
-    final_cat_tab = np.asarray(nz)
-    '''
-    final_cat_tab = np.transpose(final_cat_tab)
-    zmax_pad = np.concatenate((np.array([zmax+dz]), np.zeros(nbins)))
-
-    final_cat_tab = np.vstack((final_cat_tab, zmax_pad))
-    final_cat_tab = np.transpose(final_cat_tab)
-    '''
-
-    if sigma_phot == 0:
-        if zmin != 0:
-            final_cat_tab = np.transpose(final_cat_tab)
-            pad_vals = int((zmin-0)/dz)
-            for i in range(pad_vals):
-                z_pad = np.array([zmin-((i+1)*dz)])
-                pad_arr = np.concatenate((z_pad, np.zeros(nbins)))
-                final_cat_tab = np.vstack((pad_arr, final_cat_tab))
-
-            final_cat_tab = np.transpose(final_cat_tab)
-
-    return final_cat_tab
 
 
 def main():
@@ -295,44 +194,6 @@ def main():
     # Create 'Observed Redshift'
     config_dict = nz_fromsim_config(pipeline_variables_path=pipeline_variables_path)
     z_boundaries = create_zbin_boundaries(config_dict=config_dict)
-    observed_nz = create_nz_fromsim(config_dict=config_dict, z_boundaries=z_boundaries, redshift_type='Observed')
-    true_nz = create_nz_fromsim(config_dict=config_dict, z_boundaries=z_boundaries, redshift_type='True')
-    save_dir = config_dict['save_dir']
-    nz_table_filename = config_dict['nz_table_filename']
-
-    np.savetxt(
-        save_dir + nz_table_filename,
-        np.transpose(observed_nz)
-    )
-
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-    fig, ax1 = plt.subplots(figsize=(7.5, 6))
-
-    for i in range(len(observed_nz) - 1):
-        zs = observed_nz[0]
-
-        true_nzs = true_nz[i + 1]
-        true_nzs = true_nzs.astype(np.float64)
-        true_nzs[true_nzs == 0] = np.nan
-
-        obs_nzs = observed_nz[i + 1]
-        obs_nzs = obs_nzs.astype(np.float64)
-        obs_nzs[obs_nzs == 0] = np.nan
-
-        ax1.plot(zs, true_nzs, marker=None, linestyle=':', markersize=5, color=colors[i])
-        ax1.plot(zs, obs_nzs, 'o', markersize=5, color=colors[i])
-
-    ax1.set_xlabel('Redshift ' r'$z$', fontsize=15, labelpad=10)
-    ax1.set_ylabel(r'$n(z)$' ' [No. Galaxies/' r'$dz=0.1$' ']', fontsize=15, labelpad=10)
-    ax1.tick_params(axis="both", direction="in")
-
-    ax1.tick_params(right=True, top=True, labelright=False, labeltop=False)
-    ax1.tick_params(axis='both', which='major', labelsize=13.5)
-
-    plt.setp(ax1.xaxis.get_majorticklabels(), ha="center")
-
-    plt.savefig(save_dir + 'nz.png')
 
 
 if __name__ == '__main__':

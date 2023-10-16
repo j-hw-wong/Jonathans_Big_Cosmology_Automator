@@ -6,10 +6,10 @@ import healpy as hp
 import matplotlib.pyplot as plt
 
 import sys
-sys.path.insert(1, '/raid/scratch/wongj/mywork/3x2pt/angular_binning')
-sys.path.insert(1, '/raid/scratch/wongj/mywork/3x2pt/gaussian_cl_likelihood')
+sys.path.insert(1, '/raid/scratch/wongj/mywork/3x2pt/3x2pt_pipeline_new/angular_binning/')
+sys.path.insert(1, '/raid/scratch/wongj/mywork/3x2pt/3x2pt_pipeline_new/gaussian_cl_likelihood/')
 #sys.path.insert(1, '/raid/scratch/wongj/mywork/3x2pt/3x2pt_sim')
-sys.path.insert(1, '/raid/scratch/wongj/mywork/3x2pt')
+sys.path.insert(1, '/raid/scratch/wongj/mywork/3x2pt/3x2pt_pipeline_new/')
 
 import gaussian_cl_likelihood
 from gaussian_cl_likelihood.python import cosmosis_utils, simulation, posteriors
@@ -64,38 +64,40 @@ colors = ['#0077BB','#33BBEE','#009988','#EE7733','#CC3311','#EE3377','#BBBBBB']
 
 for i in bins:
     for j in bins:
-        if i>0:
+        if i>=j:
 
-            ell = open_dat(save_dir + 'theory_cls/galaxy_shear_cl/ell_measured.txt')
-            bp = open_dat(save_dir + 'theory_cls/galaxy_shear_cl/PCl_Bandpowers_gal_E_bin_{}_{}.txt'.format(i,j))
+            ell = open_dat(save_dir + 'theory_cls/shear_cl/ell_measured.txt')
+            bp = open_dat(save_dir + 'theory_cls/shear_cl/PCl_Bandpowers_EE_bin_{}_{}.txt'.format(i,j))
 
-            ell_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/ell_measured.txt')
-            bp_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/bin_{}_{}.txt'.format(i, j))
+            ell_measured = open_dat(save_dir + 'measured_3x2pt_bps/shear_bp/Cl_EE/ell_measured.txt')
+            bp_measured = open_dat(save_dir + 'measured_3x2pt_bps/shear_bp/Cl_EE/bin_{}_{}.txt'.format(i, j))
+
+            bp_err = open_dat(save_dir + 'measured_3x2pt_bps/shear_bp/Cl_EE/bin_{}_{}_err.txt'.format(i, j))
 
             rect = ((i * sz) + (0.08 * i) - 0.15, (j * sz) + (0.04 * j) - 0.0875, 1.25*sz, sz)
             #rect = (i*sz,j*sz,sz,sz)
             ax =fig.add_axes(rect)
 
             plt.plot(ell, bp, label='Theoretical Spectra', color='black',zorder=1)
-            plt.plot(ell,bp_measured,color=colors[3],label='Measured Spectra',linestyle='--',zorder=10)
-            #plt.plot(ell,bp_measured,color=colors[3],zorder=10,linestyle='--',label='Measured Spectra')
+            #plt.plot(ell,bp_measured,color=colors[3],label='Measured Spectra',linestyle='--',zorder=10)
+            plt.errorbar(ell,bp_measured,xerr=None, yerr=bp_err,color=colors[3],label='Measured Spectra',linestyle='--',zorder=10)
+
             plt.xscale('log')
 
-
-            if i == 1:
-                #plt.xlabel("$\\ell$",fontsize=15)
-                labelstr = str("$\\ell (\\ell+1) C_\\ell^{\delta_{g}\gamma} / 2 \\pi$")
+            
+            if i == 1 and j == 1:
+                plt.xlabel("$\\ell$",fontsize=15)
+                labelstr = str("$\\ell (\\ell+1) C_\\ell^{\delta_{g}\delta_{g}} / 2 \\pi$")
                 plt.ylabel(labelstr,fontsize=15)
-                #plt.text(0.0, 2.75, textstr, linespacing=1.5, transform=ax.transAxes)
-                ax.legend(bbox_to_anchor=(0.95, 1.6),fontsize=13.5)
+                ax.legend(bbox_to_anchor=(0.9, 1.6),fontsize=13.5)
 
             if j == 1:
                 plt.xlabel("$\\ell$",fontsize=15)
 
             if i == j:
-                labelstr = str("$\\ell (\\ell+1) C_\\ell^{\delta_{g}\gamma} / 2 \\pi$")
-                #plt.ylabel(labelstr,fontsize=15)
-                #plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                labelstr = str("$\\ell (\\ell+1) C_\\ell^{\delta_{g}\delta_{g}} / 2 \\pi$")
+                plt.ylabel(labelstr,fontsize=15)
+                plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             '''
             if j!=1:
                 plt.gca().xaxis.set_ticklabels([])
@@ -104,18 +106,15 @@ for i in bins:
                 plt.gca().yaxis.set_ticklabels([])
 
             if j ==1:
-                ax.set_ylim([-1.5e-2,3e-2])
-                #ax.set_ylim([-0.875e-2,1.75e-2])
-                #ax.set_ylim([-0.75e-3,0.225e-2])
-
+                ax.set_ylim([-2e-5,4e-4])
 
             if j == 2:
-                ax.set_ylim([-1e-3,5e-3])
+                ax.set_ylim([-2e-5,2e-4])
 
             if j == 3:
-                ax.set_ylim([-2.5e-3,5e-3])
+                ax.set_ylim([-2e-5,1.75e-4])
                 #ax.ticklabel_format(style='sci', scilimits=(-3, 4), axis='y')
-            '''
+            '''           
 
             ax.minorticks_on()
 
@@ -131,39 +130,41 @@ plt.show()
 
 fig = matplotlib.pyplot.figure(figsize=(10,10))
 
-
 for i in bins:
     for j in bins:
-        if i>0:
+        if i>=j:
 
-            ell = open_dat(save_dir + 'theory_cls/galaxy_shear_cl/ell_measured.txt')
-            bp = open_dat(save_dir + 'theory_cls/galaxy_shear_cl/PCl_Bandpowers_gal_E_bin_{}_{}.txt')
+            ell = open_dat(save_dir + 'theory_cls/shear_cl/ell_measured.txt')
+            bp = open_dat(save_dir + 'theory_cls/shear_cl/PCl_Bandpowers_EE_bin_{}_{}.txt'.format(i,j))
 
-            ell_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/ell_measured.txt')
-            bp_measured = open_dat(save_dir + 'measured_3x2pt_bps/galaxy_shear_bp/bin_{}_{}.txt'.format(i, j))
+            ell_measured = open_dat(save_dir + 'measured_3x2pt_bps/shear_bp/Cl_EE/ell_measured.txt')
+            bp_measured = open_dat(save_dir + 'measured_3x2pt_bps/shear_bp/Cl_EE/bin_{}_{}.txt'.format(i, j))
+
+            bp_err = open_dat(save_dir + 'measured_3x2pt_bps/shear_bp/Cl_EE/bin_{}_{}_err.txt'.format(i, j))
 
             rect = ((i * sz) + (0.08 * i) - 0.15, (j * sz) + (0.04 * j) - 0.0875, 1.25*sz, sz)
             #rect = (i*sz,j*sz,sz,sz)
             ax =fig.add_axes(rect)
-            plt.axhline(y=0,color='black')
-            plt.plot(ell, ((bp_measured)/(bp))-1, label='Fractional Difference', color=colors[3],zorder=1,linestyle='--')
 
+            #plt.plot(ell, ((bp_measured)/(bp))-1, label='Fractional Difference', color=colors[3],zorder=1,linestyle='--')
+            plt.errorbar(ell, ((bp_measured)/(bp))-1, xerr=None, yerr=(bp_err/bp),label='Fractional Difference', color=colors[3],zorder=1,linestyle='--')
+            plt.axhline(y=0,color='black')
             plt.xscale('log')
 
-            if i == 1:
-                #plt.xlabel("$\\ell$",fontsize=15)
-                labelstr = str("$\\ell (\\ell+1) C_\\ell^{\delta_{g}\gamma} / 2 \\pi$")
+            
+            if i == 1 and j == 1:
+                plt.xlabel("$\\ell$",fontsize=15)
+                labelstr = str("$\\ell (\\ell+1) C_\\ell^{\delta_{g}\delta_{g}} / 2 \\pi$")
                 plt.ylabel(labelstr,fontsize=15)
-                #plt.text(0.0, 2.75, textstr, linespacing=1.5, transform=ax.transAxes)
-                ax.legend(bbox_to_anchor=(0.95, 1.6),fontsize=13.5)
+                ax.legend(bbox_to_anchor=(0.85, 1.6),fontsize=13.5)
 
             if j == 1:
                 plt.xlabel("$\\ell$",fontsize=15)
 
             if i == j:
-                labelstr = str("$\\ell (\\ell+1) C_\\ell^{\delta_{g}\gamma} / 2 \\pi$")
-                #plt.ylabel(labelstr,fontsize=15)
-                #plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                labelstr = str("$\\ell (\\ell+1) C_\\ell^{\delta_{g}\delta_{g}} / 2 \\pi$")
+                plt.ylabel(labelstr,fontsize=15)
+                plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
             if j!=1:
                 plt.gca().xaxis.set_ticklabels([])
@@ -173,25 +174,16 @@ for i in bins:
             ax.set_ylim([-0.2,0.2])
 
             '''
-            if j!=1:
-                plt.gca().xaxis.set_ticklabels([])
-
-            if i!=j:
-                plt.gca().yaxis.set_ticklabels([])
-
             if j ==1:
-                ax.set_ylim([-1.5e-2,3e-2])
-                #ax.set_ylim([-0.875e-2,1.75e-2])
-                #ax.set_ylim([-0.75e-3,0.225e-2])
-
+                ax.set_ylim([-2e-5,4e-4])
 
             if j == 2:
-                ax.set_ylim([-1e-3,5e-3])
+                ax.set_ylim([-2e-5,2e-4])
 
             if j == 3:
-                ax.set_ylim([-2.5e-3,5e-3])
+                ax.set_ylim([-2e-5,1.75e-4])
                 #ax.ticklabel_format(style='sci', scilimits=(-3, 4), axis='y')
-            '''
+            '''           
 
             ax.minorticks_on()
 
