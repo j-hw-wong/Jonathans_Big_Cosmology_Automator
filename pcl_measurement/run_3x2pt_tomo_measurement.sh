@@ -13,11 +13,11 @@ echo Done
 
 export REALISATIONS
 echo Measuring power spectra from mock catalogues in parallel...
-mpirun -n 2 python measure_cat_3x2pt_pcls_par.py
+#mpirun -n 2 python measure_cat_3x2pt_pcls.py
 echo Done
 
 echo Calculating Cls averaged over realisations...
-python av_cls.py
+#python av_cls.py
 echo Done
 
 echo Running Cosmosis and calculating theoretical 3x2pt spectra...

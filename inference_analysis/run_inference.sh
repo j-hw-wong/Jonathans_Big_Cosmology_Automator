@@ -2,16 +2,16 @@
 
 start=$SECONDS
 
-PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/3x2pt_pipeline_final/set_variables_inference.ini"
+PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/Jonathans_Big_Cosmology_Automator/inference_analysis/set_variables_inference.ini"
 export PIPELINE_VARIABLES_PATH
 
 source <(grep = $PIPELINE_VARIABLES_PATH)
 export MEASUREMENT_SAVE_DIR
 export NZ_TABLE_FILENAME
-export GAUSSIAN_CL_LIKELIHOOD_PATH
 export COSMOSIS_ROOT_DIR
 export INPUT_ELL_MIN
 export INPUT_ELL_MAX
+export PIPELINE_DIR
 
 GAUSSIAN_CL_LIKELIHOOD_PATH=${PIPELINE_DIR}gaussian_cl_likelihood/
 ANGULAR_BINNING_PATH=${PIPELINE_DIR}angular_binning/
