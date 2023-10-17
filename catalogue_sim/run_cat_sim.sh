@@ -65,8 +65,8 @@ do
   python compile_cat.py
   echo Done
 
-  echo CLEANING
-  python clean_products.py - Realisation ${ITER_NO} / ${REALISATIONS}
+  echo CLEANING - Realisation ${ITER_NO} / ${REALISATIONS}
+  python clean_products.py
   echo Done
 
 done

@@ -60,8 +60,8 @@ python conv_bps.py
 echo Done
 
 echo Calculating 3x2pt covariance from simulations...
-#python cov_fromsim.py
-python cov_fromsim_tot.py
+python cov_fromsim.py
+#python cov_fromsim_tot.py
 echo Done
 
 echo Weak Lensing Tomography Pipeline Complete :\)
