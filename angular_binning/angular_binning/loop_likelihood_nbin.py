@@ -818,9 +818,7 @@ def like_bp_gauss_mix_loop_nbin(grid_dir, n_bps, n_zbin, lmax_like, lmin_like, l
 
         jw = np.load(obs_bandpowers_dir+'obs_{}bp.npz'.format(n_bp))
         jw_dat = jw['obs_bp']
-        ell = np.loadtxt(obs_bandpowers_dir+'galaxy_bp/ell_measured.txt')
-        #ell = np.loadtxt('/raid/scratch/wongj/mywork/3x2pt/2807_256_DZ01/recov_cat_bps/gal_bps/ell_measured.txt')
-        #spectra_ids=np.load('/raid/scratch/wongj/mywork/3x2pt/TEST_3_BINS_NEW/spectra_order.npy')
+        ell = np.loadtxt(obs_bandpowers_dir+'galaxy_bp/ell.txt')
         spectra_ids = spectra
         print(spectra_ids)
         if not os.path.exists(obs_bandpowers_dir+'plot_obs_exp_bp/'):
@@ -1095,9 +1093,7 @@ def like_bp_gauss_mix_loop_nbin_1x2pt(grid_dir, n_bps, n_zbin, lmax_like, lmin_l
 
         jw = np.load(obs_bandpowers_dir+'obs_{}bp.npz'.format(n_bp))
         jw_dat = jw['obs_bp']
-        ell = np.loadtxt(obs_bandpowers_dir+'galaxy_bp/ell_measured.txt')
-        #ell = np.loadtxt('/raid/scratch/wongj/mywork/3x2pt/2807_256_DZ01/recov_cat_bps/gal_bps/ell_measured.txt')
-        #spectra_ids=np.load('/raid/scratch/wongj/mywork/3x2pt/TEST_3_BINS_NEW/spectra_order.npy')
+        ell = np.loadtxt(obs_bandpowers_dir+'galaxy_bp/ell.txt')
         spectra_ids = spectra
         print(spectra_ids)
         if not os.path.exists(obs_bandpowers_dir+'plot_obs_exp_bp/'):

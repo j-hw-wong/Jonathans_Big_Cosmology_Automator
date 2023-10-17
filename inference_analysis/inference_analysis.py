@@ -1,7 +1,6 @@
 import configparser
 import numpy as np
 import os
-
 import sys
 
 angular_binning_path = os.environ['ANGULAR_BINNING_PATH']
