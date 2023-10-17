@@ -1,14 +1,15 @@
 import configparser
 import numpy as np
 import os
-
 import sys
 
 angular_binning_path = os.environ['ANGULAR_BINNING_PATH']
 gaussian_cl_likelihood_path = os.environ['GAUSSIAN_CL_LIKELIHOOD_PATH']
+pipeline_dir = os.environ['PIPELINE_DIR']
 
 sys.path.insert(1, angular_binning_path)
 sys.path.insert(1, gaussian_cl_likelihood_path)
+sys.path.insert(1, pipeline_dir)
 
 from gaussian_cl_likelihood.python import cosmosis_utils, simulation, posteriors
 from angular_binning import loop_likelihood_nbin, posterior, mask, param_grids, covariance, error_vs_nbin, \

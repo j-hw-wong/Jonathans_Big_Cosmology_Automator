@@ -2,7 +2,7 @@
 
 start=$SECONDS
 
-PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/3x2pt_pipeline_final/set_variables_inference.ini"
+PIPELINE_VARIABLES_PATH="/raid/scratch/wongj/mywork/3x2pt/Jonathans_Big_Cosmology_Automator/inference_analysis/set_variables_inference.ini"
 export PIPELINE_VARIABLES_PATH
 
 source <(grep = $PIPELINE_VARIABLES_PATH)
@@ -17,6 +17,7 @@ GAUSSIAN_CL_LIKELIHOOD_PATH=${PIPELINE_DIR}gaussian_cl_likelihood/
 ANGULAR_BINNING_PATH=${PIPELINE_DIR}angular_binning/
 export GAUSSIAN_CL_LIKELIHOOD_PATH
 export ANGULAR_BINNING_PATH
+export PIPELINE_DIR
 
 echo Setting up parameter grid...
 python setup_inference_grid.py
