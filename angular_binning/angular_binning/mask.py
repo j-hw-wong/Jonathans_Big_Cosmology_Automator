@@ -143,7 +143,7 @@ def plot_mask(mask_path, save_path=None):
         plt.show()
 
 
-def get_3x2pt_mixmats(mask_path, nside, lmin, lmax_mix, lmax_out, save_path):
+def get_3x2pt_mixmats(mask_path, nside, lmin, lmax_mix, lmax_out, input_lmax, save_path):
     """
     Calculate all 3x2pt mixing matrices from a mask using NaMaster, and save to disk in a single file.
 
@@ -174,11 +174,11 @@ def get_3x2pt_mixmats(mask_path, nside, lmin, lmax_mix, lmax_out, save_path):
 
     # Create NaMaster binning scheme as individual Cls
     print('Creating binning scheme')
-    bins = nmt.NmtBin.from_lmax_linear(lmax_mix, 1)
+    bins = nmt.NmtBin.from_lmax_linear(input_lmax, 1)
 
     # Calculate mixing matrices for spin 0-0, 0-2 (equivalent to 2-0), and 2-2
-    field_spin0 = nmt.NmtField(mask, None, spin=0, lite=True, lmax_sht=lmax_mix)
-    field_spin2 = nmt.NmtField(mask, None, spin=2, lite=True, lmax_sht=lmax_mix)
+    field_spin0 = nmt.NmtField(mask, None, spin=0, lite=True, lmax_sht=input_lmax)
+    field_spin2 = nmt.NmtField(mask, None, spin=2, lite=True, lmax_sht=input_lmax)
     # field_spin0 = nmt.NmtField(mask, None, spin=0, lite=True)
     # field_spin2 = nmt.NmtField(mask, None, spin=2, lite=True)
     workspace_spin00 = nmt.NmtWorkspace()
@@ -208,21 +208,21 @@ def get_3x2pt_mixmats(mask_path, nside, lmin, lmax_mix, lmax_out, save_path):
     mixmat_bb_to_ee = mixmats_spin22[::4, 3::4]
 
     # Check everything has the correct shape
-    mixmat_shape = (lmax_mix + 1, lmax_mix + 1)
+    mixmat_shape = (input_lmax + 1, input_lmax + 1)
     assert mixmat_nn_to_nn.shape == mixmat_shape
     assert mixmat_ne_to_ne.shape == mixmat_shape
     assert mixmat_ee_to_ee.shape == mixmat_shape
     assert mixmat_bb_to_ee.shape == mixmat_shape
 
     # Trim to required output range
-    mixmat_nn_to_nn = mixmat_nn_to_nn[lmin:(lmax_out + 1), lmin:]
-    mixmat_ne_to_ne = mixmat_ne_to_ne[lmin:(lmax_out + 1), lmin:]
-    mixmat_ee_to_ee = mixmat_ee_to_ee[lmin:(lmax_out + 1), lmin:]
-    mixmat_bb_to_ee = mixmat_bb_to_ee[lmin:(lmax_out + 1), lmin:]
-
+    mixmat_nn_to_nn = mixmat_nn_to_nn[lmin:(lmax_out + 1), lmin:(input_lmax+1)]
+    mixmat_ne_to_ne = mixmat_ne_to_ne[lmin:(lmax_out + 1), lmin:(input_lmax+1)]
+    mixmat_ee_to_ee = mixmat_ee_to_ee[lmin:(lmax_out + 1), lmin:(input_lmax+1)]
+    mixmat_bb_to_ee = mixmat_bb_to_ee[lmin:(lmax_out + 1), lmin:(input_lmax+1)]
+    print(mixmat_nn_to_nn)
     # Do some final checks
     n_ell_out = lmax_out - lmin + 1
-    n_ell_in = lmax_mix - lmin + 1
+    n_ell_in = input_lmax - lmin + 1
     mixmat_out_shape = (n_ell_out, n_ell_in)
     assert mixmat_nn_to_nn.shape == mixmat_out_shape
     assert mixmat_ne_to_ne.shape == mixmat_out_shape

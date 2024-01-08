@@ -27,7 +27,6 @@ def open_spectrum(id_a, id_b, measured_cls_dir, no_iter):
 		for it in range(no_iter):
 			dat = np.loadtxt(
 				spec_dir + 'iter_{}/bin_{}_{}.txt'.format(it + 1, spec_2_zbin, spec_1_zbin))
-
 			cov_dat.append(dat)
 
 	elif spec_1_field == 'E' and spec_2_field == 'E':
@@ -52,7 +51,6 @@ def open_spectrum(id_a, id_b, measured_cls_dir, no_iter):
 		for it in range(no_iter):
 			dat = np.loadtxt(
 				spec_dir + 'iter_{}/bin_{}_{}.txt'.format(it + 1, spec_2_zbin, spec_1_zbin))
-
 			cov_dat.append(dat)
 	else:
 		sys.exit()
@@ -72,9 +70,7 @@ def main():
 	n_zbin = int(config['create_nz']['N_ZBIN'])
 	n_bp = int(config['measurement_setup']['N_BANDPOWERS'])
 	obs_type = str(config['measurement_setup']['OBS_TYPE'])
-
-	output_lmin = str(config['measurement_setup']['OUTPUT_ELL_MIN'])
-	output_lmax = str(config['measurement_setup']['OUTPUT_ELL_MAX'])
+	field_type = str(config['measurement_setup']['FIELD'])
 
 	if obs_type == '3X2PT':
 		n_field = 2 * n_zbin
@@ -83,9 +79,14 @@ def main():
 	else:
 		assert obs_type == '1X2PT'
 		n_field = n_zbin
-		fields = [f'E{z}' for z in range(1, n_zbin + 1)]
+		if field_type == 'E':
+			fields = [f'E{z}' for z in range(1, n_zbin + 1)]
+		else:
+			assert field_type == 'N'
+			fields = [f'N{z}' for z in range(1, n_zbin + 1)]
 
 	spectra = [fields[row] + fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
+
 	spec_1 = [fields[row] for diag in range(n_field) for row in range(n_field - diag)]
 	spec_2 = [fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
 
@@ -110,7 +111,9 @@ def main():
 		this_cov_dat = np.array([])
 		for it in range(len(full_cov_dat)):
 			this_cov_dat = np.concatenate((this_cov_dat, full_cov_dat[it][n]), axis=0)
-		cov_iter = np.empty([len(this_cov_dat), len(this_cov_dat)])
+
+		cov_iter = np.zeros([len(this_cov_dat), len(this_cov_dat)])
+
 		for x in range(len(this_cov_dat)):
 			for y in range(len(this_cov_dat)):
 				cov_iter[x][y] = (this_cov_dat[x] - cov_data_av[x])*(this_cov_dat[y] - cov_data_av[y])
@@ -125,8 +128,9 @@ def main():
 		os.makedirs(save_sim_cov_dir)
 
 	np.savez(
-		save_sim_cov_dir + 'cov_{}bp_l{}-{}'.format(n_bp, output_lmin, output_lmax),
+		save_sim_cov_dir + 'cov_{}bp.npz'.format(n_bp),
 		cov=cov)
+
 
 if __name__ == '__main__':
 	main()

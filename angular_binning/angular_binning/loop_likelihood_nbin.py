@@ -843,7 +843,7 @@ def like_bp_gauss_mix_loop_nbin(grid_dir, n_bps, n_zbin, lmax_like, lmin_like, l
     print(f'All done at {time.strftime("%c")}')
 
 def like_bp_gauss_mix_loop_nbin_1x2pt(grid_dir, n_bps, n_zbin, lmax_like, lmin_like, lmax_in, lmin_in,
-                                fid_she_she_dir, noise_path, mixmats_path,
+                                field, noise_path, mixmats_path,
                                 bp_cov_filemask, binmixmat_save_dir, varied_params, like_save_dir,
                                 obs_bandpowers_dir, bandpower_spacing='log', bandpower_edges=None, cov_blocks_path=None
                                 ):
@@ -909,7 +909,11 @@ def like_bp_gauss_mix_loop_nbin_1x2pt(grid_dir, n_bps, n_zbin, lmax_like, lmin_l
 
     # Form list of power spectra
     print('Forming list of power spectra')
-    fields = [f'E{z}' for z in range(1, n_zbin + 1)]
+    if field == 'E':
+        fields = [f'E{z}' for z in range(1, n_zbin + 1)]
+    else:
+        assert field == 'N'
+        fields = [f'N{z}' for z in range(1, n_zbin + 1)]
 
     assert len(fields) == n_field
     spectra = [fields[row] + fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
@@ -918,9 +922,9 @@ def like_bp_gauss_mix_loop_nbin_1x2pt(grid_dir, n_bps, n_zbin, lmax_like, lmin_l
     # Load fiducial Cls
     print(f'Loading fiducial Cls at {time.strftime("%c")}')
     # ! load spectra for 1x2pt
-    fid_cl = like_bp.load_spectra_1x2pt(n_zbin, fid_she_she_dir, lmax_in, lmin_in)
-    fid_cl = fid_cl[:, lmin_in:]
-    assert fid_cl.shape == (n_spec, n_ell_in)
+    #fid_cl = like_bp.load_spectra_1x2pt(n_zbin, fid_she_she_dir, lmax_in, lmin_in)
+    #fid_cl = fid_cl[:, lmin_in:]
+    #assert fid_cl.shape == (n_spec, n_ell_in)
 
     # Load mixing matrices
     print(f'Loading mixing matrices at {time.strftime("%c")}')
@@ -998,10 +1002,11 @@ def like_bp_gauss_mix_loop_nbin_1x2pt(grid_dir, n_bps, n_zbin, lmax_like, lmin_l
         config = like_bp_mix_1x2pt.setup(
             obs_bp_path=obs_bp_path,
             binmixmat_path=binmixmat_path,
-            mixmats=[mixmat_ee_to_ee, mixmat_bb_to_ee],
+            mixmats=[mixmat_nn_to_nn, mixmat_ee_to_ee, mixmat_bb_to_ee],
+            field=field,
             mix_lmin=lmin_in,
             cov_path=bp_cov_path,
-            she_nl_path=None,
+            #she_nl_path=None,
             noise_lmin=lmin_in,
             input_lmax=lmax_in,
             n_zbin=n_zbin)
@@ -1034,25 +1039,31 @@ def like_bp_gauss_mix_loop_nbin_1x2pt(grid_dir, n_bps, n_zbin, lmax_like, lmin_l
             err_str = f'{n_bp}bp: Not all parameters in varied_params found in {values_path}'
             assert np.all([param is not None for param in params]), err_str
             # Check the ells for consistency
-            #galaxy_ell = np.loadtxt(os.path.join(source_dir, 'galaxy_cl/ell.txt'))[:n_ell_in]
+            galaxy_ell = np.loadtxt(os.path.join(source_dir, 'galaxy_cl/ell.txt'))[:n_ell_in]
             shear_ell = np.loadtxt(os.path.join(source_dir, 'shear_cl/ell.txt'))[:n_ell_in]
             #galaxy_shear_ell = np.loadtxt(os.path.join(source_dir, 'galaxy_shear_cl/ell.txt'))[:n_ell_in]
 
-            #assert np.array_equal(galaxy_ell, ell_in)
+            assert np.array_equal(galaxy_ell, ell_in)
             assert np.array_equal(shear_ell, ell_in)
             #assert np.array_equal(galaxy_shear_ell, ell_in)
 
             # Load theory Cls
-            #th_pos_pos_dir = os.path.join(source_dir, 'galaxy_cl/')
+            th_pos_pos_dir = os.path.join(source_dir, 'galaxy_cl/')
             th_she_she_dir = os.path.join(source_dir, 'shear_cl/')
             #th_pos_she_dir = os.path.join(source_dir, 'galaxy_shear_cl/')
 
-            #noise_pos_pos_dir = os.path.join(noise_path, 'galaxy_cl/')
+            noise_pos_pos_dir = os.path.join(noise_path, 'galaxy_cl/')
             noise_she_she_dir = os.path.join(noise_path, 'shear_cl/')
             #noise_pos_she_dir = os.path.join(noise_path, 'galaxy_shear_cl/')
 
-            theory_cl = like_bp_mix_1x2pt.load_cls(n_zbin, th_she_she_dir, lmax=lmax_in)
-            noise_cls = like_bp_mix_1x2pt.load_cls(n_zbin, noise_she_she_dir, lmax=lmax_in)
+            if field == 'E':
+                theory_cl = like_bp_mix_1x2pt.load_cls(n_zbin, th_she_she_dir, lmax=lmax_in)
+                noise_cls = like_bp_mix_1x2pt.load_cls(n_zbin, noise_she_she_dir, lmax=lmax_in)
+
+            else:
+                assert field == 'N'
+                theory_cl = like_bp_mix_1x2pt.load_cls(n_zbin, th_pos_pos_dir, lmax=lmax_in)
+                noise_cls = like_bp_mix_1x2pt.load_cls(n_zbin, noise_pos_pos_dir, lmax=lmax_in)
             '''
             noise_bps = []
             for noise_cl in noise_cls:
@@ -1081,7 +1092,7 @@ def like_bp_gauss_mix_loop_nbin_1x2pt(grid_dir, n_bps, n_zbin, lmax_like, lmin_l
         like_header = (f'Output from {__file__}.like_bp_gauss_mix_loop_nbin for parameters:\ngrid_dir = {grid_dir}\n'
                        f'n_zbin = {n_zbin}\nlmax_like = {lmax_like}\nlmin_like = {lmin_like}\nlmax_in = {lmax_in}\n'
                        f'lmin_in = {lmin_in}\n'
-                       f'fid_she_she_dir = {fid_she_she_dir}\n'
+                       #f'fid_she_she_dir = {fid_she_she_dir}\n'
                        f'noise_path = {noise_path}\nmixmats_path = {mixmats_path}\n'
                        f'bp_cov_filemask = {bp_cov_filemask}\nn_bp = {n_bp}\nat {time.strftime("%c")}\n\n'
                        f'{param_names} log_like_gauss')

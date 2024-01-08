@@ -73,14 +73,17 @@ cosmosis_utils.extract_data(input_dir=chains_input_dir,
 mask.get_3x2pt_mixmats(mask_path=mask_dir,
                        nside=nside,
                        lmin=input_lmin,
-                       lmax_mix=input_lmax,
+                       lmax_mix=map_lmax,
                        lmax_out=output_lmax,
+                       input_lmax=input_lmax,
                        save_path=mix_mats_save_path)
 
 
 # Bin PCl covariance matrix to form Bandpower covariance matrix
 
 if obs_type == '1X2PT':
+
+    field = str(config['inference_analysis_params']['FIELD'])
 
     covariance.bin_combine_cov(n_zbin=nbins,
                                lmin_in=output_lmin,
@@ -92,7 +95,7 @@ if obs_type == '1X2PT':
                                save_filemask=cov_fromsim_path + 'cov_{n_bp}bp.npz',
                                bandpower_spacing='log',
                                obs_type='1x2pt')
-
+    
     loop_likelihood_nbin.like_bp_gauss_mix_loop_nbin_1x2pt(
         grid_dir=chains_input_dir,
         n_bps=np.array([n_bandpowers]),
@@ -101,7 +104,7 @@ if obs_type == '1X2PT':
         lmin_like=output_lmin,
         lmax_in=input_lmax,
         lmin_in=input_lmin,
-        fid_she_she_dir=theory_cl_dir + 'shear_cl/',
+        field=field,
         noise_path=noise_save_dir,
         mixmats_path=mix_mats_save_path,
         bp_cov_filemask=cov_fromsim_path + 'cov_{n_bp}bp.npz',
@@ -112,6 +115,7 @@ if obs_type == '1X2PT':
         bandpower_spacing='log',
         bandpower_edges=None,
         cov_blocks_path=cov_fromsim_path)
+
 
 if obs_type == '3X2PT':
 
@@ -125,7 +129,9 @@ if obs_type == '3X2PT':
                                save_filemask=cov_fromsim_path + 'cov_{n_bp}bp.npz',
                                bandpower_spacing='log',
                                obs_type='3x2pt')
-
+    
+    save_combined_cov_path = inference_analysis_output_dir + 'combined_signal_noise_cov/'
+    
     # Execute the likelihood analysis
     loop_likelihood_nbin.like_bp_gauss_mix_loop_nbin(
         grid_dir=chains_input_dir,
@@ -141,6 +147,7 @@ if obs_type == '3X2PT':
         noise_path=noise_save_dir,
         mixmats_path=mix_mats_save_path,
         bp_cov_filemask=cov_fromsim_path+'cov_{n_bp}bp.npz',
+        #bp_cov_filemask=save_combined_cov_path + 'cov_{n_bp}bp.npz',
         binmixmat_save_dir=binmixmat_save_dir,
         varied_params=['w', 'wa'],
         like_save_dir=inference_analysis_output_dir,
@@ -148,6 +155,8 @@ if obs_type == '3X2PT':
         bandpower_spacing='log',
         bandpower_edges=None,
         cov_blocks_path=cov_fromsim_path)
+        #cov_blocks_path = save_combined_cov_path)
+
 
 posterior.cl_post(
     log_like_filemask=cl_like_filemask,
@@ -163,3 +172,36 @@ posterior.cl_post(
     obs_type=obs_type,
     plot_save_path=inference_analysis_output_dir+'contours_l{}-{}_{}.png'.format(output_lmin, output_lmax, obs_type)
 )
+
+'''
+contour_3x2pt = posterior.get_contours(
+    log_like_filemask=inference_analysis_output_dir + 'like_lmaxlike%s_{n_bp}bp_3x2pt.txt' % (output_lmax),
+    contour_levels_sig=[1, 2, 3],
+    bp=n_bandpowers,
+    colour='C2',
+    linestyle='-'
+)
+
+contour_1x2ptE = posterior.get_contours(
+    log_like_filemask=inference_analysis_output_dir + 'like_lmaxlike%s_{n_bp}bp_1x2ptE.txt' % (output_lmax),
+    contour_levels_sig=[1, 2, 3],
+    bp=n_bandpowers,
+    colour='C0',
+    linestyle='-'
+)
+
+contour_1x2ptN = posterior.get_contours(
+    log_like_filemask=inference_analysis_output_dir + 'like_lmaxlike%s_{n_bp}bp_1x2ptN.txt' % (output_lmax),
+    contour_levels_sig=[1, 2, 3],
+    bp=n_bandpowers,
+    colour='C1',
+    linestyle='-'
+)
+
+posterior.plot_multiple_contours(
+    contour_params=[contour_1x2ptE, contour_1x2ptN, contour_3x2pt],
+    title='w0-wa Constraints for 3x2pt Probes',
+    labels=['1x2pt Shear', '1x2pt Clustering', 'Full 3x2pt'],
+    plot_save_path=inference_analysis_output_dir+'contours_l{}-{}_All.png'.format(output_lmin, output_lmax),
+)
+'''

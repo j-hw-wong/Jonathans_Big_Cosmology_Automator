@@ -158,7 +158,7 @@ def apply_pixwin_theory_cls(n_zbin, pos_pos_dir, she_she_dir, pos_she_dir, nside
                            np.transpose(she_she_cls * (hpx_win[1][lmin:]) * (hpx_win[1][lmin:])))
 
 
-def setup(obs_bp_path, binmixmat_path, mixmats, mix_lmin, cov_path, she_nl_path, noise_lmin,
+def setup(obs_bp_path, binmixmat_path, mixmats, field, mix_lmin, cov_path, noise_lmin,
           input_lmax, n_zbin):
     """
     Load and precompute everything that is fixed throughout parameter space. This should be called once per analysis,
@@ -203,6 +203,7 @@ def setup(obs_bp_path, binmixmat_path, mixmats, mix_lmin, cov_path, she_nl_path,
     # CHANGED HERE!!!
     # cov = np.diag(np.diag(cov))
     # cov = np.abs(cov)
+    #cov = cov[10:, 10:]
     # print(cov)
     # Invert covariance
     inv_cov = np.linalg.inv(cov)
@@ -211,15 +212,18 @@ def setup(obs_bp_path, binmixmat_path, mixmats, mix_lmin, cov_path, she_nl_path,
     # print(cov @ inv_cov)
 
     # Specify mixing matrices
-    mixmat_ee_to_ee = mixmats[0]
-    mixmat_bb_to_ee = mixmats[1]
+    mixmat_nn_to_nn = mixmats[0]
+    mixmat_ee_to_ee = mixmats[1]
+    mixmat_bb_to_ee = mixmats[2]
     # Could e.g assert mixmat shape == binmix shape
 
     # Load combined mixing and binning matrices
     with np.load(binmixmat_path) as data:
+        binmix_tt_to_tt = data['binmix_tt_to_tt']
         binmix_ee_to_ee = data['binmix_ee_to_ee']
         binmix_bb_to_ee = data['binmix_bb_to_ee']
     n_cl = binmix_ee_to_ee.shape[1]
+    assert binmix_tt_to_tt.shape == (n_bandpower, n_cl)
     assert binmix_ee_to_ee.shape == (n_bandpower, n_cl)
     assert binmix_bb_to_ee.shape == (n_bandpower, n_cl)
     mix_lmax = mix_lmin + n_cl - 1
@@ -229,7 +233,7 @@ def setup(obs_bp_path, binmixmat_path, mixmats, mix_lmin, cov_path, she_nl_path,
 
     zeros_lowl = np.zeros(noise_lmin)
     zeros_hil = np.zeros(max(mix_lmax - input_lmax, 0))
-
+    '''
     if she_nl_path is not None:
         assert she_nl_path is not None
         she_nl = np.loadtxt(she_nl_path, max_rows=(input_lmax - noise_lmin + 1))
@@ -238,9 +242,24 @@ def setup(obs_bp_path, binmixmat_path, mixmats, mix_lmin, cov_path, she_nl_path,
     else:
         assert she_nl_path is None
         she_nl = None
+        
+    if pos_nl_path is not None:
+        assert pos_nl_path is not None
+        pos_nl = np.loadtxt(pos_nl_path, max_rows=(input_lmax - noise_lmin + 1))
+        pos_nl = np.concatenate((zeros_lowl, pos_nl, zeros_hil))[mix_lmin:(mix_lmax + 1)]
+        assert pos_nl.shape == (n_cl,)
+    else:
+        assert pos_nl_path is None
+        pos_nl = None
+    '''
     # Generate a list of spectrum types (NN, EE or NE) in the correct (diagonal) order, so that we know which mixing
     # matrix/matrices to apply
-    fields = [field for _ in range(n_zbin) for field in ('E')]
+    if field == 'E':
+        fields = [field for _ in range(n_zbin) for field in ('E')]
+    else:
+        assert field == 'N'
+        fields = [field for _ in range(n_zbin) for field in ('N')]
+
     n_field = len(fields)
     spectra = [fields[row] + fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
     assert len(spectra) == n_spec
@@ -251,15 +270,17 @@ def setup(obs_bp_path, binmixmat_path, mixmats, mix_lmin, cov_path, she_nl_path,
         'inv_cov': inv_cov,
         'mix_lmin': mix_lmin,
         'mix_lmax': mix_lmax,
-        'she_nl': she_nl,
         'input_lmax': input_lmax,
         'n_spec': n_spec,
         'n_cl': n_cl,
         'n_zbin': n_zbin,
+        'field': field,
         'spectra': spectra,
         'n_bandpower': n_bandpower,
+        'mixmat_nn_to_nn': mixmat_nn_to_nn,
         'mixmat_ee_to_ee': mixmat_ee_to_ee,
         'mixmat_bb_to_ee': mixmat_bb_to_ee,
+        'binmix_tt_to_tt': binmix_tt_to_tt,
         'binmix_ee_to_ee': binmix_ee_to_ee,
         'binmix_bb_to_ee': binmix_bb_to_ee
     }
@@ -284,15 +305,17 @@ def execute(theory_cl, theory_lmin, config, noise_cls, pbl):
     inv_cov = config['inv_cov']
     mix_lmin = config['mix_lmin']
     mix_lmax = config['mix_lmax']
-    she_nl = config['she_nl']
     input_lmax = config['input_lmax']
     n_spec = config['n_spec']
+    field = config['field']
     n_cl = config['n_cl']
     n_zbin = config['n_zbin']
     spectra = config['spectra']
     n_bandpower = config['n_bandpower']
+    mixmat_nn_to_nn = config['mixmat_nn_to_nn']
     mixmat_ee_to_ee = config['mixmat_ee_to_ee']
     mixmat_bb_to_ee = config['mixmat_bb_to_ee']
+    binmix_tt_to_tt = config['binmix_tt_to_tt']
     binmix_ee_to_ee = config['binmix_ee_to_ee']
     binmix_bb_to_ee = config['binmix_bb_to_ee']
 
@@ -318,26 +341,41 @@ def execute(theory_cl, theory_lmin, config, noise_cls, pbl):
     noise_cls = noise_cls[:, mix_lmin:(mix_lmax + 1)]
     # assert noise_cls.shape == (n_spec, n_cl), (noise_cls.shape, (n_spec, n_cl))
 
-    if noise_cls is None:
+    #if noise_cls is None:
         # Add noise to auto-spectra
-        theory_cl[:(2 * n_zbin):2] += pos_nl
-        theory_cl[1:(2 * n_zbin):2] += she_nl
+    #    theory_cl[:(2 * n_zbin):2] += pos_nl
+    #    theory_cl[1:(2 * n_zbin):2] += she_nl
     # else:
     #    theory_cl = np.asarray(theory_cl) + np.asarray(noise_cls)
 
     exp_bp = np.full((n_spec, n_bandpower), np.nan)
     for spec_idx, spec in enumerate(spectra):
-        if spec == 'EE':
-            this_cl = theory_cl[spec_idx]
-            this_noise_cl = noise_cls[spec_idx]
-            this_exp_bp = pbl @ ((mixmat_ee_to_ee @ this_cl) + this_noise_cl)
+        if field == 'E':
+            if spec == 'EE':
+                this_cl = theory_cl[spec_idx]
+                this_noise_cl = noise_cls[spec_idx]
+                this_exp_bp = pbl @ ((mixmat_ee_to_ee @ this_cl) + this_noise_cl)
+            else:
+                raise ValueError('Unexpected spectrum: ' + spec)
+            exp_bp[spec_idx] = this_exp_bp
+
         else:
-            raise ValueError('Unexpected spectrum: ' + spec)
-        exp_bp[spec_idx] = this_exp_bp
+            assert field == 'N'
+            if spec == 'NN':
+                this_cl = theory_cl[spec_idx]
+                this_noise_cl = noise_cls[spec_idx]
+                this_exp_bp = pbl @ ((mixmat_nn_to_nn @ this_cl) + this_noise_cl)
+            else:
+                raise ValueError('Unexpected spectrum: ' + spec)
+            exp_bp[spec_idx] = this_exp_bp
     assert np.all(np.isfinite(exp_bp))
 
     # Vectorise
     exp_bp = np.reshape(exp_bp, n_spec * n_bandpower)
+    #obs_bp = obs_bp[10:]
+    #exp_bp = exp_bp[10:]
+    #print(obs_bp)
+    #print(exp_bp)
     # Evalute log pdf
     return mvg_logpdf_fixedcov(obs_bp, exp_bp, inv_cov)
 
@@ -360,15 +398,17 @@ def expected_bp(theory_cl, theory_lmin, config, noise_cls, pbl):
     inv_cov = config['inv_cov']
     mix_lmin = config['mix_lmin']
     mix_lmax = config['mix_lmax']
-    she_nl = config['she_nl']
     input_lmax = config['input_lmax']
     n_spec = config['n_spec']
+    field = config['field']
     n_cl = config['n_cl']
     n_zbin = config['n_zbin']
     spectra = config['spectra']
     n_bandpower = config['n_bandpower']
+    mixmat_nn_to_nn = config['mixmat_nn_to_nn']
     mixmat_ee_to_ee = config['mixmat_ee_to_ee']
     mixmat_bb_to_ee = config['mixmat_bb_to_ee']
+    binmix_tt_to_tt = config['binmix_tt_to_tt']
     binmix_ee_to_ee = config['binmix_ee_to_ee']
     binmix_bb_to_ee = config['binmix_bb_to_ee']
 
@@ -383,26 +423,44 @@ def expected_bp(theory_cl, theory_lmin, config, noise_cls, pbl):
     theory_cl = theory_cl[:, mix_lmin:(mix_lmax + 1)]
     assert theory_cl.shape == (n_spec, n_cl), (theory_cl.shape, (n_spec, n_cl))
 
-    # Need to adjust theory Cl for Healpix window function if measuring from maps
-    # hpx_window = hp.pixwin(nside=64, pol=True, lmax=input_lmax)
+    # Now trim/pad noise Cls as above
+    # 1. Trim so power is truncated above input_lmax
+    noise_cls = noise_cls[:, :(input_lmax - theory_lmin + 1)]
+    # 2. Pad so theory power runs from 0 up to max(input_lmax, mix_lmax)
+    zeros_lowl = np.zeros((n_spec, theory_lmin))
+    zeros_hil = np.zeros((n_spec, max(mix_lmax - input_lmax, 0)))
+    noise_cls = np.concatenate((zeros_lowl, noise_cls, zeros_hil), axis=-1)
+    # 3. Truncate so it runs from mix_lmin to mix_lmax
+    noise_cls = noise_cls[:, mix_lmin:(mix_lmax + 1)]
+    # assert noise_cls.shape == (n_spec, n_cl), (noise_cls.shape, (n_spec, n_cl))
 
-    if noise_cls is None:
+    #if noise_cls is None:
         # Add noise to auto-spectra
-        theory_cl[:(2 * n_zbin):2] += pos_nl
-        theory_cl[1:(2 * n_zbin):2] += she_nl
+    #    theory_cl[:(2 * n_zbin):2] += pos_nl
+    #    theory_cl[1:(2 * n_zbin):2] += she_nl
     # else:
     #    theory_cl = np.asarray(theory_cl) + np.asarray(noise_cls)
 
-
     exp_bp = np.full((n_spec, n_bandpower), np.nan)
     for spec_idx, spec in enumerate(spectra):
-        if spec == 'EE':
-            this_cl = theory_cl[spec_idx]
-            this_noise_cl = noise_cls[spec_idx]
-            this_exp_bp = pbl @ ((mixmat_ee_to_ee @ this_cl) + this_noise_cl)
+        if field == 'E':
+            if spec == 'EE':
+                this_cl = theory_cl[spec_idx]
+                this_noise_cl = noise_cls[spec_idx]
+                this_exp_bp = pbl @ ((mixmat_ee_to_ee @ this_cl) + this_noise_cl)
+            else:
+                raise ValueError('Unexpected spectrum: ' + spec)
+            exp_bp[spec_idx] = this_exp_bp
+
         else:
-            raise ValueError('Unexpected spectrum: ' + spec)
-        exp_bp[spec_idx] = this_exp_bp
+            assert field == 'N'
+            if spec == 'NN':
+                this_cl = theory_cl[spec_idx]
+                this_noise_cl = noise_cls[spec_idx]
+                this_exp_bp = pbl @ ((mixmat_ee_to_ee @ this_cl) + this_noise_cl)
+            else:
+                raise ValueError('Unexpected spectrum: ' + spec)
+            exp_bp[spec_idx] = this_exp_bp
     assert np.all(np.isfinite(exp_bp))
 
     return exp_bp

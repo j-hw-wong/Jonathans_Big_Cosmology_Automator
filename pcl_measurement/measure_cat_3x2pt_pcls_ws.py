@@ -29,7 +29,7 @@ def measure_pcls_config(pipeline_variables_path):
 
     # These lmin, lmax out could be changed - lrange that is measured out from Healpix maps
     raw_pcl_lmin_out = 0
-    raw_pcl_lmax_out = int(float(config['measurement_setup']['INPUT_ELL_MAX']))
+    raw_pcl_lmax_out = (3*nside)-1
 
     sigma_phot = float(config['noise_cls']['SIGMA_PHOT'])
     sigma_e = float(config['noise_cls']['SIGMA_SHEAR'])
@@ -82,6 +82,7 @@ def maps_from_cats(config_dict, iter_no):
     shear1 = np.array(f.get('Shear_y1'))
     shear2 = np.array(f.get('Shear_y2'))
     indices = np.array(f.get('Healpix_Index_(Position)'))
+    weightings = np.array(f.get('Galaxy_Weighting'))
 
     # Extract all the redshift information to make the n(z)
     true_z = np.array(f.get('True_Redshift_z'))

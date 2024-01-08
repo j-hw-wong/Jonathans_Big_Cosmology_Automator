@@ -15,7 +15,7 @@ def av_cls_config(pipeline_variables_path):
     nside = int(config['measurement_setup']['NSIDE'])
     realisations = int(config['measurement_setup']['realisations'])
     pcl_lmin_out = 0
-    pcl_lmax_out = (3*nside)-1
+    pcl_lmax_out = int(float(config['measurement_setup']['INPUT_ELL_MAX']))
 
     nbins = int(config['create_nz']['N_ZBIN'])
 

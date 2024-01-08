@@ -11,14 +11,9 @@ echo Creating nz...
 python create_nz_boundaries.py
 echo Done
 
-for ITER_NO in $(seq 1 $REALISATIONS)
-do
-  export ITER_NO
-
-  echo Measuring power spectra from mock catalogue - Realisation ${ITER_NO} / ${REALISATIONS}
-  python measure_cat_3x2pt_pcls.py
-
-done
+export REALISATIONS
+echo Measuring power spectra from mock catalogues in parallel...
+mpirun -np 2 python measure_cat_3x2pt_pcls_par.py
 
 echo Calculating Cls averaged over realisations...
 python av_cls.py
@@ -68,4 +63,5 @@ echo Weak Lensing Tomography Pipeline Complete :\)
 
 duration=$((SECONDS-start))
 echo Total time elapsed: $duration
+
 

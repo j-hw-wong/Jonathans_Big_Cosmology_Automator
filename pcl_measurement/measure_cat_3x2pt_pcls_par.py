@@ -8,6 +8,7 @@ import pymaster as nmt
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
+from mpi4py import MPI
 
 def measure_pcls_config(pipeline_variables_path):
     config = configparser.ConfigParser()
@@ -143,7 +144,7 @@ def maps_from_cats(config_dict, iter_no):
         nz.append(iter_hist_sample)
 
     final_cat_tab = np.asarray(nz)
-
+    
     if sigma_phot == 0:
         if zmin != 0:
             final_cat_tab = np.transpose(final_cat_tab)
@@ -154,7 +155,7 @@ def maps_from_cats(config_dict, iter_no):
                 final_cat_tab = np.vstack((pad_arr, final_cat_tab))
 
             final_cat_tab = np.transpose(final_cat_tab)
-
+    
     nz_save_dir = save_dir + 'nz_tables/'
     if not os.path.exists(nz_save_dir):
         os.makedirs(nz_save_dir)
@@ -431,11 +432,11 @@ def measure_22_pcls(lmin_out, lmax_out, cut_maps_dic, spectra_type, bin_i, bin_j
     #np.savetxt(measured_pcl_save_dir + 'ell.txt', np.transpose(ells))
 
 
-def execute_pcl_measurement():
+def execute_pcl_measurement(realisation):
     pipeline_variables_path = os.environ['PIPELINE_VARIABLES_PATH']
     config_dict = measure_pcls_config(pipeline_variables_path=pipeline_variables_path)
 
-    realisation = os.environ['ITER_NO']
+    #realisation = os.environ['ITER_NO']
 
     cut_sky_map_dicts = maps_from_cats(config_dict=config_dict, iter_no=realisation)
 
@@ -577,5 +578,28 @@ def execute_pcl_measurement():
                 )
 
 
+def execute_par_measurement():
+
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    n_iter = int(os.environ['REALISATIONS'])
+
+    for i in range(n_iter):
+        # This is how we split up the jobs.
+        # The % sign is a modulus, and the "continue" means
+        # "skip the rest of this bit and go to the next time
+        # through the loop"
+        # If we had e.g. 4 processors, this would mean
+        # that proc zero did tasks 0, 4, 8, 12, 16, ...
+        # and proc one did tasks 1, 5, 9, 13, 17, ...
+        # and so on.
+        if i % size != rank: continue
+
+        execute_pcl_measurement(realisation=i+1)
+
+
 if __name__ == '__main__':
-    execute_pcl_measurement()
+    execute_par_measurement()
+

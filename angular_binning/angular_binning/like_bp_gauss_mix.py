@@ -209,7 +209,6 @@ def setup(obs_bp_path, binmixmat_path, mixmats, mix_lmin, cov_path, pos_nl_path,
     with np.load(cov_path) as data:
         cov = data['cov']
     assert cov.shape == (n_data, n_data)
-    print(cov)
 
     #CHANGED HERE!!!
     #cov = np.diag(np.diag(cov))

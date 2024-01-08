@@ -58,11 +58,11 @@ do
   echo Done
 
   echo Randomly sampling galaxy positions from map - Realisation ${ITER_NO} / ${REALISATIONS}
-  python poisson_sample_gal_position.py
+  python poisson_sample_gal_position_new.py
   echo Done
 
   echo Compiling mock galaxy catalogue - Realisation ${ITER_NO} / ${REALISATIONS}
-  python compile_cat.py
+  python compile_cat_new.py
   echo Done
 
   echo CLEANING

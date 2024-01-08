@@ -29,7 +29,7 @@ def measure_bps_config(pipeline_variables_path):
     output_lmax = int(float(config['measurement_setup']['OUTPUT_ELL_MAX']))
 
     map_lmin = 0
-    map_lmax = (3*nside)-1
+    map_lmax = (3 * nside) - 1
 
     input_lmin = int(float(config['measurement_setup']['INPUT_ELL_MIN']))
     input_lmax = int(float(config['measurement_setup']['INPUT_ELL_MAX']))
@@ -102,9 +102,8 @@ def measure_bps_config(pipeline_variables_path):
 
 
 def measured_cls_to_obs_cls(measured_cls_dir, obs_cls_dir, bin_i, bin_j, lmin_out, lmax_out):
-
     measured_cl = np.loadtxt(measured_cls_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j))
-    obs_cl = measured_cl[lmin_out:lmax_out+1]
+    obs_cl = measured_cl[lmin_out:lmax_out + 1]
 
     if not os.path.exists(obs_cls_dir):
         os.makedirs(obs_cls_dir)
@@ -112,7 +111,7 @@ def measured_cls_to_obs_cls(measured_cls_dir, obs_cls_dir, bin_i, bin_j, lmin_ou
     np.savetxt(obs_cls_dir + 'bin_{}_{}.txt'.format(bin_i, bin_j), obs_cl)
 
     measured_ell = np.loadtxt(measured_cls_dir + 'ell.txt')
-    obs_ell = measured_ell[lmin_out:lmax_out+1]
+    obs_ell = measured_ell[lmin_out:lmax_out + 1]
 
     np.savetxt(obs_cls_dir + 'ell.txt', np.transpose(obs_ell))
 
@@ -145,7 +144,7 @@ def calc_stdem_bps(bp_dir, n_bps, bin_i, bin_j, realisations):
         bp_av = np.zeros(len(bp_vals))
         bp_av += np.mean(bp_vals)
 
-        bps_err.append(np.sqrt((sum((bp_vals - bp_av)**2))/(realisations**2)))
+        bps_err.append(np.sqrt((sum((bp_vals - bp_av) ** 2)) / (realisations ** 2)))
 
     np.savetxt(bp_dir + 'bin_%s_%s_err.txt' % (bin_i, bin_j),
                np.transpose(bps_err))
@@ -265,7 +264,7 @@ def process_00_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
     f0 = nmt.NmtField(mask=obs_mask, maps=None, spin=0, lmax_sht=input_lmax, lite=True)
 
     w = nmt.NmtWorkspace()
-    #w.compute_coupling_matrix(f0, f0, bins=bp_bins)
+    # w.compute_coupling_matrix(f0, f0, bins=bp_bins)
     w.compute_coupling_matrix(f0, f0, bins=nmt.NmtBin.from_lmax_linear(input_lmax, 1))
 
     # theory cls go from input lmin to input lmax
@@ -285,7 +284,6 @@ def process_00_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
     noise_cls = pad_cls(lmin=output_lmin, input_cls=noise_cls)
     theory_cls = [theory_cls]
     theory_pcl = w.couple_cell(theory_cls)
-
     binned_theory_pcl = pbl @ (theory_pcl[0][output_lmin:output_lmax + 1] + noise_cls[output_lmin:output_lmax + 1])
     # binned_theory_pcl = pbl @ (theory_pcl[0][output_lmin:output_lmax + 1])
 
@@ -299,7 +297,6 @@ def process_00_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
 
 def process_02_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_i, bin_j, obs_mask_path, bp_bins,
                     ell_arr, pbl):
-
     output_lmin = config_dict['output_lmin']
     output_lmax = config_dict['output_lmax']
     input_lmin = config_dict['input_lmin']
@@ -318,7 +315,7 @@ def process_02_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
     f2 = nmt.NmtField(mask=obs_mask, maps=None, spin=2, lmax_sht=input_lmax)
 
     w = nmt.NmtWorkspace()
-    #w.compute_coupling_matrix(f0, f2, bins=bp_bins)
+    # w.compute_coupling_matrix(f0, f2, bins=bp_bins)
     w.compute_coupling_matrix(f0, f2, bins=nmt.NmtBin.from_lmax_linear(input_lmax, 1))
 
     binned_theory_pcls = defaultdict(list)
@@ -386,7 +383,7 @@ def process_02_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
 
         binned_theory_pcls['gal_E'] = pbl @ (theory_pcl[0][output_lmin:output_lmax + 1]
                                              + noise_cls[output_lmin:output_lmax + 1])
-        #binned_theory_pcls['gal_E'] = pbl @ (theory_pcl[0][output_lmin:output_lmax + 1])
+        # binned_theory_pcls['gal_E'] = pbl @ (theory_pcl[0][output_lmin:output_lmax + 1])
         binned_theory_pcls['gal_B'] = pbl @ (theory_pcl[1][output_lmin:output_lmax + 1]
                                              + noise_cls[output_lmin:output_lmax + 1])
 
@@ -402,7 +399,6 @@ def process_02_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
 
 def process_22_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_i, bin_j, obs_mask_path, bp_bins,
                     ell_arr, pbl):
-
     output_lmin = config_dict['output_lmin']
     output_lmax = config_dict['output_lmax']
     input_lmin = config_dict['input_lmin']
@@ -420,7 +416,7 @@ def process_22_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
     f2 = nmt.NmtField(mask=obs_mask, maps=None, spin=2, lmax_sht=input_lmax)
 
     w = nmt.NmtWorkspace()
-    #w.compute_coupling_matrix(f2, f2, bins=bp_bins)
+    # w.compute_coupling_matrix(f2, f2, bins=bp_bins)
     w.compute_coupling_matrix(f2, f2, bins=nmt.NmtBin.from_lmax_linear(input_lmax, 1))
 
     theory_EE, theory_EB, theory_BE, theory_BB = [pad_cls(
@@ -449,12 +445,12 @@ def process_22_pcls(config_dict, theory_cl_dir, noise_cl_dir, spectra_type, bin_
         'BB': pbl @ (theory_pcls[3][output_lmin:output_lmax + 1] + noise_cls[output_lmin:output_lmax + 1])
     }
 
-    #binned_theory_pcls = {
+    # binned_theory_pcls = {
     #    'EE': pbl @ (theory_pcls[0][output_lmin:output_lmax + 1]),
     #    'EB': pbl @ (theory_pcls[1][output_lmin:output_lmax + 1]),
     #    'BE': pbl @ (theory_pcls[2][output_lmin:output_lmax + 1]),
     #    'BB': pbl @ (theory_pcls[3][output_lmin:output_lmax + 1])
-    #}
+    # }
 
     bp_save_dir = setup_theory_cls(cl_dir=theory_cl_dir, spectra_type=spectra_type, bin_i=bin_i, bin_j=bin_j)[1]
 
@@ -521,7 +517,7 @@ def main():
     noise_cls_dir = save_dir + 'raw_noise_cls/'
 
     create_null_spectras(nbins=nbins, lmin=input_lmin, lmax=input_lmax, output_dir=theory_cls_dir)
-    create_null_spectras(nbins=nbins, lmin=map_lmin, lmax=map_lmax, output_dir=noise_cls_dir)
+    create_null_spectras(nbins=nbins, lmin=0, lmax=input_lmax, output_dir=noise_cls_dir)
 
     shutil.copytree(save_dir + 'cosmosis/shear_cl', theory_cls_dir + 'shear_cl')
     shutil.copytree(save_dir + 'cosmosis/galaxy_cl', theory_cls_dir + 'galaxy_cl')

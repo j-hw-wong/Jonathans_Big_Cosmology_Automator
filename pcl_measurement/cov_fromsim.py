@@ -27,7 +27,6 @@ def open_spectrum(id_a, id_b, measured_cls_dir, no_iter):
 		for it in range(no_iter):
 			dat = np.loadtxt(
 				spec_dir + 'iter_{}/bin_{}_{}.txt'.format(it + 1, spec_2_zbin, spec_1_zbin))
-
 			cov_dat.append(dat)
 
 	elif spec_1_field == 'E' and spec_2_field == 'E':
@@ -72,14 +71,22 @@ def main():
 	n_zbin = int(config['create_nz']['N_ZBIN'])
 
 	obs_type = str(config['measurement_setup']['OBS_TYPE'])
+	field_type = str(config['measurement_setup']['FIELD'])
 
 	if obs_type == '3X2PT':
 		n_field = 2 * n_zbin
+		fields = [f'{f}{z}' for z in range(1, n_zbin + 1) for f in ['N', 'E']]
+
 	else:
 		assert obs_type == '1X2PT'
 		n_field = n_zbin
+		if field_type == 'E':
+			fields = [f'{f}{z}' for z in range(1, n_zbin + 1) for f in ['E']]
 
-	fields = [f'{f}{z}' for z in range(1, n_zbin + 1) for f in ['N', 'E']]
+		else:
+			assert field_type == 'N'
+			fields = [f'{f}{z}' for z in range(1, n_zbin + 1) for f in ['N']]
+
 	spectra = [fields[row] + fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
 	spec_1 = [fields[row] for diag in range(n_field) for row in range(n_field - diag)]
 	spec_2 = [fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
@@ -115,8 +122,8 @@ def main():
 					total_cov_dat.append(cov_iter)
 
 				cov = np.mean(np.array(total_cov_dat), axis=0)
-				#cov = np.abs(cov)
-				#cov = np.diag(np.diag(cov))
+				# cov = np.abs(cov)
+				# cov = np.diag(np.diag(cov))
 				save_sim_cov_dir = save_dir + 'cov_fromsim/'
 
 				if not os.path.exists(save_sim_cov_dir):

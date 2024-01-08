@@ -128,7 +128,8 @@ def create_nz(config_dict, z_boundaries):
 
     # print("J.Wong very smart")
 
-    sub_hist_bins = np.arange(zmin, zmax+dz+dz, dz)
+    #sub_hist_bins = np.arange(zmin, zmax+dz+dz, dz)
+    sub_hist_bins = np.linspace(zmin, zmax+dz, nbins+2)
     sub_hist_bins = sub_hist_bins.round(decimals=2)
     gal_dic_binned = defaultdict(list)
     gal_dic_binned_hist = defaultdict(list)

@@ -20,10 +20,10 @@ def conv_3x2pt_bps(n_zbin, n_bp, save_dir, recov_cat_bps_path, obs_type='obs'):
 
     # Form list of power spectra
     fields = [f'{f}{z}' for z in range(1, n_zbin + 1) for f in ['N', 'E']]
+    print(fields)
     assert len(fields) == n_field
 
     spectra = [fields[row] + fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
-
     spec_1 = [fields[row] for diag in range(n_field) for row in range(n_field - diag)]
     spec_2 = [fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
 
@@ -44,16 +44,24 @@ def conv_3x2pt_bps(n_zbin, n_bp, save_dir, recov_cat_bps_path, obs_type='obs'):
 
             if f1 == 'N' and f2 == 'N':
                 measured_bp_file = recov_cat_bps_path + 'galaxy_bp/bin_{}_{}.txt'.format(max(z1, z2), min(z1, z2))
+                #measured_bp_file = save_dir + 'theory_cls/galaxy_cl/PCl_Bandpowers_gal_gal_bin_{}_{}.txt'.\
+                #    format(max(z1, z2), min(z1, z2))
 
             elif f1 == 'E' and f2 == 'E':
                 measured_bp_file = recov_cat_bps_path + 'shear_bp/Cl_EE/bin_{}_{}.txt'.format(max(z1, z2), min(z1, z2))
+                #measured_bp_file = save_dir + 'theory_cls/shear_cl/PCl_Bandpowers_EE_bin_{}_{}.txt'. \
+                #    format(max(z1, z2), min(z1, z2))
 
             elif f1 == 'N' and f2 == 'E':
                 measured_bp_file = recov_cat_bps_path + 'galaxy_shear_bp/bin_{}_{}.txt'.format(z1, z2)
+                #measured_bp_file = save_dir + 'theory_cls/galaxy_shear_cl/PCl_Bandpowers_gal_E_bin_{}_{}.txt'. \
+                #    format(z1, z2)
 
             elif f1 == 'E' and f2 == 'N':
                 # switch around, i.e. open f2z2f1z1
                 measured_bp_file = recov_cat_bps_path + 'galaxy_shear_bp/bin_{}_{}.txt'.format(z2, z1)
+                #measured_bp_file = save_dir + 'theory_cls/galaxy_shear_cl/PCl_Bandpowers_gal_E_bin_{}_{}.txt'. \
+                #    format(z2, z1)
 
             else:
                 print('Unexpected Spectra Found - Please check inference pipeline')
@@ -109,11 +117,12 @@ def conv_1x2pt_bps(n_zbin, n_bp, save_dir, recov_cat_bps_path, obs_type='obs', f
         fields = [f'N{z}' for z in range(1, n_zbin + 1)]
 
     assert len(fields) == n_field
-    spectra = [fields[row] + fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
-
-    spec_1 = [fields[row] for diag in range(n_field) for row in range(n_field - diag)]
-    spec_2 = [fields[row + diag] for diag in range(n_field) for row in range(n_field - diag)]
-
+    spectra = [fields[diag] + fields[diag] for diag in range(n_field)]
+    print(spectra)
+    spec_1 = [fields[diag] for diag in range(n_field)]
+    spec_2 = [fields[diag] for diag in range(n_field)]
+    #print(spec_1)
+    #print(spec_2)
     field_1 = [mysplit(spec_1_id)[0] for spec_1_id in spec_1]
     zbin_1 = [mysplit(spec_1_id)[1] for spec_1_id in spec_1]
     field_2 = [mysplit(spec_2_id)[0] for spec_2_id in spec_2]
@@ -126,6 +135,8 @@ def conv_1x2pt_bps(n_zbin, n_bp, save_dir, recov_cat_bps_path, obs_type='obs', f
         f2 = field_2[spec_idx]
         z1 = zbin_1[spec_idx]
         z2 = zbin_2[spec_idx]
+        #assert f1 == 'E'
+        #assert f2 == 'E'
 
         if obs_type == 'obs':
 

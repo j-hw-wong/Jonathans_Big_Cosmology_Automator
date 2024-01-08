@@ -1,1 +1,9 @@
 .idea/
+./catalogue_sim/compile_cat_new.py
+./catalogue_sim/poisson_sample_gal_position_new.py
+./pcl_measurement/measure_cat_3x2pt_pcls_ws.py
+./pcl_measurement/measure_cat_3x2pt_pcls_weighting.py
+./pcl_measurement/measure_cat_3x2pt_pcls_par.py
+./pcl_measurement/conv_bps_field_auto.py
+./pcl_measurement/run_3x2pt_tomo_measurement_par.sh
+./inference_analysis/inference_analysis_iter.py
